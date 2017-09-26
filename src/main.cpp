@@ -42,7 +42,7 @@ int* safe_distance;
 int* order;
 
 int delay = 0;
-int draw_delay=32;
+int draw_delay=1;
 FILE *results;
 
 char log_buffer[255];
