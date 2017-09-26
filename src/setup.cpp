@@ -1,22 +1,40 @@
-#define ROBOT_COUNT 100
+#define ROBOT_COUNT 50
 
-#define ARENA_WIDTH 2400
-#define ARENA_HEIGHT 2400
+#define ARENA_WIDTH 1000
+#define ARENA_HEIGHT 1000
 
 #define SIMULATION_TIME 180 //in seconds
 
+#include <iostream>
+
 void setup_positions(float robot_pos[ROBOT_COUNT][3])
 {
-	int columns = 10;
-	int horizontal_separation = 200;
-	int vertical_separation = 200;
+	double distance;
+  bool collision;
+	// Set robot positions
+
+	cout << (ARENA_HEIGHT - 100) << endl;
 	for (int i = 0;i < ROBOT_COUNT;i++)
 	{
-		int c = i % columns + 1;
-		int r = i / columns + 1;
-		robot_pos[i][0] = c * horizontal_separation; //x
-		robot_pos[i][1] = r * vertical_separation;   //y
-		robot_pos[i][2]= rand() * 2 * PI / RAND_MAX; //theta
-	}
-}
+		int myX;
+		int myY;
 
+		collision = true;
+		while (collision) {
+			collision = false;
+			myX = rand() % (ARENA_WIDTH - 200) + 100;
+			myY = rand() % (ARENA_HEIGHT - 200) + 100;
+			
+			for (int j = 0; j < i; j++) {
+				distance = sqrt(pow((robot_pos[j][0] - myX), 2) + pow((robot_pos[j][1] - myY), 2));
+				if (distance < 50) { collision = true; break; }
+			}
+		}
+
+		robot_pos[i][0] = myX; //x
+		robot_pos[i][1] = myY;   //y
+		robot_pos[i][2]= rand() * 2 * PI / RAND_MAX; //thetas
+	}
+
+
+}

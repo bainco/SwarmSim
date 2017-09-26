@@ -1,14 +1,19 @@
 #pragma once
 #include "kilolib.h"
+#include <iostream>
+
+using namespace std;
 
 class mykilobot : public kilobot
 {
 	unsigned char distance;
 	message_t out_message;
 	int rxed=0;
-	
+
 	int motion=0;
 	long int motion_timer=0;
+
+	unsigned char myR, myG, myB;
 
 	int msrx=0;
 	struct mydata {
@@ -27,7 +32,7 @@ class mykilobot : public kilobot
 			{
 				if(out_message.data[0]<(id))
 				{
-				
+
 					motion=0;
 					motion_timer=kilo_ticks;//kilo_ticks is the kilobots clock
 
@@ -44,12 +49,10 @@ class mykilobot : public kilobot
 		if(motion==0)
 		{
 			set_motors(0, 0);//turn off motors
-			set_color(RGB(3,0,0));//set color
 		}
 		else
 		{
-			set_color(RGB(0,3,0));
-			
+
 			if(rand()%100<90)
 			{
 				spinup_motors();//first start motors
@@ -64,14 +67,19 @@ class mykilobot : public kilobot
 				spinup_motors();
 				set_motors(kilo_turn_left, 0);
 			}
-			
+
 		}
-	
+
 		//update message
 		out_message.type = NORMAL;
 		out_message.data[0] = id;
 		out_message.data[1] = 0;
 		out_message.data[2] = 0;
+
+		out_message.data[3] = myR;
+		out_message.data[4] = myG;
+		out_message.data[5] = myB;
+
 		out_message.crc = message_crc(&out_message);
 	}
 
@@ -83,9 +91,18 @@ class mykilobot : public kilobot
 		out_message.data[0] = id;
 		out_message.data[1] = 0;
 		out_message.data[2] = 0;
+
+	  myR = rand_hard() >> 6;
+		myG = rand_hard() >> 6;
+		myB = rand_hard() >> 6;
+
+		out_message.data[3] = myR;
+		out_message.data[4] = myG;
+		out_message.data[5] = myB;
+
 		out_message.crc = message_crc(&out_message);
-		set_color(RGB(0,0,3));
-		
+
+		set_color(RGB(myR, myG, myB));
 	}
 
 	//executed on successfull message send
@@ -98,8 +115,9 @@ class mykilobot : public kilobot
 	message_t *message_tx()
 	{
 		static int count = rand();
+
 		count--;
-		if (!(count % 50))
+		if (!(count % 100))
 		{
 			return &out_message;
 		}
@@ -113,6 +131,13 @@ class mykilobot : public kilobot
 		out_message.data[0] = message->data[0];
 		out_message.data[1] = message->data[1];
 		out_message.data[2] = message->data[2];
+
+		myR = message->data[3];
+		myG = message->data[4];
+		myB = message->data[5];
+
+		set_color(RGB(myR, myG, myB));
+
 		rxed=1;
 	}
 };
