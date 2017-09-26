@@ -49,12 +49,12 @@ public:
 
 	unsigned char rand_soft()
 	{
-		return rand() * 255 / RAND_MAX;
+		return rand() * 255;
 	}
 
 	unsigned char rand_hard()
 	{
-		return rand() * 255 / RAND_MAX;
+		return rand() * 255;
 	}
 
 	unsigned char message_crc(message_t *m)
@@ -152,7 +152,7 @@ public:
 		return 0;
 	}
 
-	bool comm_in_criteria(double x, double y, double d, void *cd) 
+	bool comm_in_criteria(double x, double y, double d, void *cd)
 	{
 		distance_measurement = d;
 		message_rx((message_t *)cd, &distance_measurement);
@@ -178,7 +178,7 @@ public:
 	{
 		void *m = this->message_tx();
 		if(m)
-		{		
+		{
 		this->message_tx_success();
 		}
 		return m;
