@@ -1,3 +1,9 @@
+/************************
+**** Assignment 1 - kilobot.cpp
+**** EECS 496
+**** Name: Connor Bain
+************************/
+
 #pragma once
 #include "kilolib.h"
 

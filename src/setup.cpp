@@ -1,3 +1,9 @@
+/************************
+**** Assignment 1 - setup.cpp
+**** EECS 496
+**** Name: Connor Bain
+************************/
+
 #define ROBOT_COUNT 50
 
 #define ARENA_WIDTH 1000
