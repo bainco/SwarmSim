@@ -4,10 +4,8 @@
 **** Name: Connor Bain
 ************************/
 
-#define ROBOT_COUNT 50
-
-#define ARENA_WIDTH 1000
-#define ARENA_HEIGHT 1000
+#define ARENA_WIDTH 2040
+#define ARENA_HEIGHT 2040
 
 #define SAFE_DIST 50
 
@@ -18,34 +16,23 @@
 void setup_positions(float robot_pos[ROBOT_COUNT][3])
 {
 	double distance; // Variable to store the distance calc between bots
-  bool collision;  // Flag to store if there is a collision
+	bool collision;  // Flag to store if there is a collision
 
+
+	// RECTANGLE
 	// Set robot positions
-	for (int i = 0;i < ROBOT_COUNT;i++)
-	{
-		// For every robot generate an (X,Y,H) 3-tuple
-		int myX, myY;
+	for (int i = 0; i < 32;i++) {
+		for (int j = 0; j < 32; j++) {
 
-		// Generate (X,Y) within a safe boundary and make sure there are no
-		// near by bots.
-		collision = true;
-		while (collision) {
-			collision = false;
-			// Generate within an arena safe-area
-			myX = rand() % (ARENA_WIDTH - 200) + 100;
-			myY = rand() % (ARENA_HEIGHT - 200) + 100;
+			int which = (32*i) + j;
+			// For every robot generate an (X,Y,H) 3-tuple
+			robot_pos[which][0] = (j * 40) + 25; // Save the new X value
+			robot_pos[which][1] = (i * 40) + 25; // Save the new Y value
+			robot_pos[which][2] = 0; //thetas
 
-			// Go through and check each bot for collisions (within 50mm)
-			for (int j = 0; j < i; j++) {
-				// Calculate the distance between the ith bot and the jth bot
-				distance = sqrt(pow((robot_pos[j][0] - myX), 2) + pow((robot_pos[j][1] - myY), 2));
-				// If there's a collision, go back and generate a new (X,Y) pair
-				if (distance < SAFE_DIST) { collision = true; break; }
-			}
+			// Special seed IDs
+			if (which == 0)  robot_pos[which][3] = 0; //id
+			if (which == 31) robot_pos[which][3] = 31;
 		}
-
-		robot_pos[i][0] = myX; // Save the new X value
-		robot_pos[i][1] = myY; // Save the new Y value
-		robot_pos[i][2]= rand() * 2 * PI / RAND_MAX; //thetas
 	}
 }

@@ -523,15 +523,16 @@ int main(int argc, char **argv)
 	view_y = arena_height;
 
 	//place robots
-	float robot_pos[ROBOT_COUNT][3];
+	float robot_pos[ROBOT_COUNT][4];
 	setup_positions(robot_pos);
-
 	for (int i=0; i<ROBOT_COUNT; i++)
 	{
 		robots[i] = new mykilobot();
 		robots[i]->robot_init(robot_pos[i][0], robot_pos[i][1], robot_pos[i][2]);
+		robots[i]->id=(int)robot_pos[i][3];
 	}
 	setup();
+
 
 	//do some open gl stuff
 
