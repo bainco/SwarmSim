@@ -51,7 +51,7 @@ class mykilobot : public kilobot
 	void loop()
 	{
 		// If we're a seed, set location and setup gradient message
-		if (id == 31) {
+		if (id == 31 || id == 0) {
 			myX = id;
 			myY = 0;
 
@@ -63,9 +63,9 @@ class mykilobot : public kilobot
 		}
 		else {
 			//cout << seed1.hopcount << endl;
-			if (seed2.hopcount % 3 == 0)
+			if (seed1.hopcount % 3 == 0)
 				set_color(RGB(1, 1, 1));
-			else if (seed2.hopcount % 3 == 0)
+			else if (seed1.hopcount % 3 == 0)
 				set_color(RGB(2, 2, 2));
 			else
 				set_color(RGB(0, 0, 0));
@@ -125,6 +125,24 @@ class mykilobot : public kilobot
 				seed2.id = inID;
 				seed2.x = inX;
 				seed2.y = inY;
+
+				out_message.type = NORMAL;
+
+				out_message.data[0] = inID;
+				out_message.data[1] = inX;
+				out_message.data[2] = inY;
+				out_message.data[3] = inHop + 1;
+
+				// Genereate the crc for the out_message
+				out_message.crc = message_crc(&out_message);
+				set_color(RGB(2, 2, 2));
+			}
+			if (inID == 0 && inHop > 0 && seed1.hopcount > inHop) {
+				cout << "update to: " << inHop << endl;
+				seed1.hopcount = inHop;
+				seed1.id = inID;
+				seed1.x = inX;
+				seed1.y = inY;
 
 				out_message.type = NORMAL;
 
