@@ -56,8 +56,7 @@ class mykilobot : public kilobot
 	//executed once at start
 	void setup()
 	{
-
-		//cout << id << endl;
+			cout << id << endl;
 			seed1.hopcount = 999;
 			seed2.hopcount = 999;
 
@@ -67,7 +66,6 @@ class mykilobot : public kilobot
 
 		// If we're a seed, set location and setup gradient message
 		if (id == 31 || id == 0) {
-			cout << "HELLO" << endl;
 			myX = id;
 			myY = 0;
 

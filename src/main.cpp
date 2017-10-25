@@ -530,7 +530,9 @@ int main(int argc, char **argv)
 		robots[i] = new mykilobot();
 		robots[i]->robot_init(robot_pos[i][0], robot_pos[i][1], robot_pos[i][2]);
 		robots[i]->id=(int)robot_pos[i][3];
-		cout << robots[i]->id << endl;
+
+		if (robots[i]->id != (int)robot_pos[i][3])
+			cout << "error" << endl;
 	}
 	setup();
 
