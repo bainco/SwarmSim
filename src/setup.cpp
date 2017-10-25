@@ -4,8 +4,8 @@
 **** Name: Connor Bain
 ************************/
 
-#define ARENA_WIDTH 2040
-#define ARENA_HEIGHT 2040
+#define ARENA_WIDTH 1280
+#define ARENA_HEIGHT 1280
 
 #define ROBOT_COUNT 1024
 
@@ -31,11 +31,11 @@ void setup_positions(float robot_pos[ROBOT_COUNT][4])
 			robot_pos[which][0] = (j * 40) + 25; // Save the new X value
 			robot_pos[which][1] = (i * 40) + 25; // Save the new Y value
 			robot_pos[which][2] = 0; //thetas
-
+			robot_pos[which][3] = which;
 			// Special seed IDs
-			if (which == 0)  robot_pos[which][3] = 0.0; //id
-			else if (which == 31) robot_pos[which][3] = 31.0;
-			else robot_pos[which][3] = 999.0;
+			//if (which == 0)  robot_pos[which][3] = 0; //id
+			//else if (which == 31) robot_pos[which][3] = 31;
+			//else robot_pos[which][3] = 999.0;
 		}
 	}
 }

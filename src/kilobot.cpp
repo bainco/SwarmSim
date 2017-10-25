@@ -50,22 +50,8 @@ class mykilobot : public kilobot
 	//main loop
 	void loop()
 	{
-		state = 0;
-	}
-
-	//executed once at start
-	void setup()
-	{
-			cout << id << endl;
-			seed1.hopcount = 999;
-			seed2.hopcount = 999;
-
-		state = 0;
-
-		out_message.type = NORMAL;
-
 		// If we're a seed, set location and setup gradient message
-		if (id == 31 || id == 0) {
+		if (id == 31) {
 			myX = id;
 			myY = 0;
 
@@ -75,6 +61,27 @@ class mykilobot : public kilobot
 			out_message.data[3] = 1;  // send hop-count
 			set_color(RGB(1, 0, 2));
 		}
+		else {
+			//cout << seed1.hopcount << endl;
+			if (seed2.hopcount % 3 == 0)
+				set_color(RGB(1, 1, 1));
+			else if (seed2.hopcount % 3 == 0)
+				set_color(RGB(2, 2, 2));
+			else
+				set_color(RGB(0, 0, 0));
+		}
+	}
+
+	//executed once at start
+	void setup()
+	{
+		seed1.hopcount = 999;
+		seed2.hopcount = 999;
+
+		state = 0;
+
+		out_message.type = NORMAL;
+
 		// Genereate the crc for the out_message
 		out_message.crc = message_crc(&out_message);
 
@@ -105,7 +112,6 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
-
 		if (state == 0) {
 			// [id, x, y, hopcount]
 			int inID = message->data[0]; // We'll say id
@@ -113,24 +119,23 @@ class mykilobot : public kilobot
 			int inY = message->data[2];
 			int inHop = message->data[3];
 
-			if (inID == 0 && seed1.hopcount > inHop) {
-				seed1.hopcount = inHop;
-
-				out_message.data[0] = inID;
-				out_message.data[1] = inX;
-				out_message.data[2] = inY;
-				out_message.data[3] = inHop + 1;
-				//set_color(RGB(2, 2, 2));
-			}
-
-			if (inID == 31 && seed2.hopcount > inHop) {
+			if (inID == 31 && inHop > 0 && seed2.hopcount > inHop) {
+				cout << "update to: " << inHop << endl;
 				seed2.hopcount = inHop;
+				seed2.id = inID;
+				seed2.x = inX;
+				seed2.y = inY;
+
+				out_message.type = NORMAL;
 
 				out_message.data[0] = inID;
 				out_message.data[1] = inX;
 				out_message.data[2] = inY;
 				out_message.data[3] = inHop + 1;
-				//set_color(RGB(1, 1, 1));
+
+				// Genereate the crc for the out_message
+				out_message.crc = message_crc(&out_message);
+				set_color(RGB(2, 2, 2));
 			}
 		}
 
