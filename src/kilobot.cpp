@@ -6,6 +6,7 @@
 
 #pragma once
 #include "kilolib.h"
+#include <iostream>
 
 using namespace std;
 
@@ -18,6 +19,15 @@ class mykilobot : public kilobot
 	int motion=0;
 	long int motion_timer=0;
 
+	// 0 -> initial state
+	// 1 -> received both gradients
+	// 2 -> caluclated local positions
+  char state;
+
+
+	// Variables to store location
+	int myX, myY;
+
 	// Variables to store our color (RGB) values
 	unsigned char myR, myG, myB;
 
@@ -26,9 +36,10 @@ class mykilobot : public kilobot
 		unsigned int id;
 		unsigned int x;
 		unsigned int y;
-	}
+		unsigned int hopcount;
+	} seed1, seed2;
 
-	struct seed seedInfo[2];
+
 
 	int msrx=0;
 	struct mydata {
@@ -39,36 +50,38 @@ class mykilobot : public kilobot
 	//main loop
 	void loop()
 	{
-		//update message (again, not sure if we're supposed to keep this)
-		out_message.type = NORMAL;
-		out_message.data[0] = id;
-		out_message.data[1] = 0;
-		out_message.data[2] = 0;
-
-		out_message.crc = message_crc(&out_message);
+		state = 0;
 	}
 
 	//executed once at start
 	void setup()
 	{
-		// Mask the id (limit to 256) (already there...not sure if removing?)
-		id=id&0xff;
+
+		//cout << id << endl;
+			seed1.hopcount = 999;
+			seed2.hopcount = 999;
+
+		state = 0;
 
 		out_message.type = NORMAL;
 
-		// If we're a seed, send gradient
+		// If we're a seed, set location and setup gradient message
 		if (id == 31 || id == 0) {
-			out_message.data[0] = id; // send id
-			out_message.data[1] = id; // send x value
-			out_message.data[2] = 0;  // send y value
-			out_message.data[3] = 1;  // send hop-count
-		}
+			cout << "HELLO" << endl;
+			myX = id;
+			myY = 0;
 
+			out_message.data[0] = id; // send id
+			out_message.data[1] = myX; // send x value
+			out_message.data[2] = myY;  // send y value
+			out_message.data[3] = 1;  // send hop-count
+			set_color(RGB(1, 0, 2));
+		}
 		// Genereate the crc for the out_message
 		out_message.crc = message_crc(&out_message);
 
-		// Set our color the randomly generated values
-		set_color(RGB(0, 0, 0));
+		// Set our color to purple
+
 	}
 
 	//executed on successfull message send
@@ -83,8 +96,8 @@ class mykilobot : public kilobot
 		static int count = rand();
 
 		count--;
-		// Send every 100 cycles
-		if (!(count % 100))
+		// Send every 10 cycles
+		if (!(count % 10))
 		{
 			return &out_message;
 		}
@@ -94,12 +107,34 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
-		out_message.data[0] = message->data[0]; // We'll say id
-		out_message.data[1] = message->data[1]; // hop count
 
-		// Update the out_message buffer with the propogated packet
-		out_message.data[0] = myR;
-		out_message.data[1] = myG;
+		if (state == 0) {
+			// [id, x, y, hopcount]
+			int inID = message->data[0]; // We'll say id
+			int inX = message->data[1];
+			int inY = message->data[2];
+			int inHop = message->data[3];
+
+			if (inID == 0 && seed1.hopcount > inHop) {
+				seed1.hopcount = inHop;
+
+				out_message.data[0] = inID;
+				out_message.data[1] = inX;
+				out_message.data[2] = inY;
+				out_message.data[3] = inHop + 1;
+				//set_color(RGB(2, 2, 2));
+			}
+
+			if (inID == 31 && seed2.hopcount > inHop) {
+				seed2.hopcount = inHop;
+
+				out_message.data[0] = inID;
+				out_message.data[1] = inX;
+				out_message.data[2] = inY;
+				out_message.data[3] = inHop + 1;
+				//set_color(RGB(1, 1, 1));
+			}
+		}
 
 		rxed=1;
 	}
