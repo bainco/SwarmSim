@@ -65,10 +65,7 @@ class mykilobot : public kilobot
 	char updatedRecently = 100;
 
 	// Variables to store location
-	int myX, myY;
-
-	// Variables to store our color (RGB) values
-	unsigned char myR, myG, myB;
+	float myX, myY;
 
 	//
 	struct seed {
@@ -83,8 +80,9 @@ class mykilobot : public kilobot
 
 	int msrx=0;
 
-	void calculateLocalPosition() {
 
+	float distToSeed(unsigned char seedID) {
+		return sqrt(pow(inSeeds[seedID].x - myX, 2) + pow(inSeeds[seedID].y - myY, 2));
 	}
 
 	//main loop
@@ -103,6 +101,52 @@ class mykilobot : public kilobot
 			out_message.data[4] = 1;  // send hop-count
 			set_color(RGB(1, 0, 2));
 		}
+		else if (state == 1) {
+			// LOCALIZE
+			float deltaX = 0.0;
+			float deltaY = 0.0;
+
+			float partDiffX = 0.0;
+			float partDiffY = 0.0;
+
+			float r =2;
+			float alpha = 0.3;
+
+			for (int i = 0; i < MAX_SEEDS; i++) {
+				if (inSeeds[i].hopcount > 0) {
+					partDiffX += ((myX - inSeeds[i].x)*(1 - (distToSeed(i)/(r*inSeeds[i].hopcount))));
+					partDiffY += ((myY - inSeeds[i].y)*(1 - (distToSeed(i)/(r*inSeeds[i].hopcount))));
+				}
+			}
+
+			deltaX = (1 * alpha) * partDiffX;
+			deltaY = (1 * alpha) * partDiffY;
+
+			myX += deltaX;
+			myY += deltaY;
+
+			if (deltaX < 0.0001 && deltaY < 0.0001) {
+				state = 2;
+				cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
+
+				int theX = myX;
+				int theY = myY;
+
+				if (theX > 31)
+					theX = 31;
+				if (theX < 0)
+					theX = 0;
+				if (theY > 31)
+					theY = 31;
+				if (theY < 0)
+					theY = 0;
+
+				if (theImage[theX][theY] == 0)
+					set_color(RGB(2, 0, 1));
+				else
+					set_color(RGB(0, 0, 0));
+			}
+		}
 
 		else if (state == 0) {
 			updatedRecently--;
@@ -116,6 +160,15 @@ class mykilobot : public kilobot
 
 			if (updatedRecently <= 0) {
 				state = 1;
+				// find closest seed and just assume we're where they are
+				unsigned char distance = 255;
+				for (int i = 0; i < MAX_SEEDS; i++) {
+					if (inSeeds[i].hopcount < distance && inSeeds[i].hopcount > 0) {
+						myX = inSeeds[i].x;
+						myY = inSeeds[i].y;
+					}
+				}
+
 				set_color(RGB(1,0,2));
 			}
 		}
@@ -164,10 +217,10 @@ class mykilobot : public kilobot
 			// [type, id, x, y, hopcount]
 			unsigned char inType = message->data[0];
 			// type: 1 -> GRADIENT BROADCAST, 2 -> SMOOTHING BROADCAST,
-			unsigned char inID = message->data[1]; // We'll say id
-			unsigned char inX = message->data[2];
-			unsigned char inY = message->data[3];
-			unsigned char inHop = message->data[4];
+			unsigned char inID   = message->data[1];
+			unsigned char inX    = message->data[2];
+			unsigned char inY    = message->data[3];
+			unsigned char inHop  = message->data[4];
 
 			if (inType == TYPE_GRADIENT_BROADCAST && inHop > 0) {
 				if (inHop < inSeeds[inID].hopcount) {
