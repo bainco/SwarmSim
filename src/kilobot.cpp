@@ -91,7 +91,10 @@ class mykilobot : public kilobot
 		// If we're a seed, set location and setup gradient message
 		if (id == SEED_A_ID || id == SEED_B_ID) {
 			// I'm a seed. I know where I am.
-			myX = id;
+			if(id == SEED_A_ID)
+				myX = 0;
+			else
+				myX = 31;
 			myY = 0;
 
 			out_message.data[0] = TYPE_GRADIENT_BROADCAST;
@@ -125,7 +128,7 @@ class mykilobot : public kilobot
 			myX += deltaX;
 			myY += deltaY;
 
-			if (deltaX < 0.0001 && deltaY < 0.0001) {
+			if (deltaX < 0.001 && deltaY < 0.001) {
 				state = 2;
 				cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
 
