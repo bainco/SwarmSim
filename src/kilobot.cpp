@@ -8,9 +8,10 @@
 #include "kilolib.h"
 #include <iostream>
 
+#define TYPE_GRADIENT_BROADCAST 1
 #define SEED_A_ID 0
 #define SEED_B_ID 1
-
+#define MAX_SEEDS 10
 using namespace std;
 
 class mykilobot : public kilobot
@@ -23,11 +24,10 @@ class mykilobot : public kilobot
 	long int motion_timer=0;
 
 	// 0 -> initial state
-	// 1 -> received both gradients
+	// 1 -> received both gradients and stable
 	// 2 -> caluclated local positions
   char state;
-	char updating = 100;
-
+	char updatedRecently = 100;
 
 	// Variables to store location
 	int myX, myY;
@@ -37,44 +37,49 @@ class mykilobot : public kilobot
 
 	//
 	struct seed {
-		unsigned int id;
-		unsigned int x;
-		unsigned int y;
-		unsigned int hopcount;
-	} seed1, seed2;
+		unsigned char id;
+		unsigned char x;
+		unsigned char y;
+		unsigned char hopcount;
+	};
+
+  // Handle up to 10 seeds
+	seed inSeeds[MAX_SEEDS];
 
 	int msrx=0;
-	struct mydata {
-		unsigned int data1;
-		unsigned int data2;
-	};
+
+	void calculateLocalPosition() {
+
+	}
 
 	//main loop
 	void loop()
 	{
 		// If we're a seed, set location and setup gradient message
 		if (id == SEED_A_ID || id == SEED_B_ID) {
+			// I'm a seed. I know where I am.
 			myX = id;
 			myY = 0;
 
-			out_message.data[0] = id; // send id
-			out_message.data[1] = myX; // send x value
-			out_message.data[2] = myY;  // send y value
-			out_message.data[3] = 1;  // send hop-count
+			out_message.data[0] = TYPE_GRADIENT_BROADCAST;
+			out_message.data[1] = id; // send id
+			out_message.data[2] = myX; // send x value
+			out_message.data[3] = myY;  // send y value
+			out_message.data[4] = 1;  // send hop-count
 			set_color(RGB(1, 0, 2));
 		}
 
 		else if (state == 0) {
-			updating--;
+			updatedRecently--;
 			//cout << seed1.hopcount << endl;
-			if (seed1.hopcount % 3 == 0)
+			if (inSeeds[0].hopcount % 3 == 0)
 				set_color(RGB(1, 1, 1));
-			else if (seed1.hopcount % 3 == 1)
+			else if (inSeeds[0].hopcount % 3 == 1)
 				set_color(RGB(2, 2, 2));
 			else
 				set_color(RGB(0, 0, 0));
 
-			if (updating <= 0) {
+			if (updatedRecently <= 0) {
 				state = 1;
 				set_color(RGB(1,0,2));
 			}
@@ -84,9 +89,12 @@ class mykilobot : public kilobot
 	//executed once at start
 	void setup()
 	{
-		seed1.hopcount = 999;
-		seed2.hopcount = 999;
+		// Max out all seed hopcounts
+		for (char i = 0; i < MAX_SEEDS; i++) {
+			inSeeds[i].hopcount = 255;
+		}
 
+		// We all start in state 0
 		state = 0;
 
 		// Prep out message but leave it blank
@@ -118,51 +126,33 @@ class mykilobot : public kilobot
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
 		//if (state == 0) {
-			// [id, x, y, hopcount]
-			int inID = message->data[0]; // We'll say id
-			int inX = message->data[1];
-			int inY = message->data[2];
-			int inHop = message->data[3];
+			// [type, id, x, y, hopcount]
+			unsigned char inType = message->data[0];
+			// type: 1 -> GRADIENT BROADCAST, 2 -> SMOOTHING BROADCAST,
+			unsigned char inID = message->data[1]; // We'll say id
+			unsigned char inX = message->data[2];
+			unsigned char inY = message->data[3];
+			unsigned char inHop = message->data[4];
 
-			if (inID == SEED_B_ID && inHop > 0 && seed2.hopcount > inHop) {
-				updating = 100;
-				cout << id << " update to: " << inHop << endl;
-				seed2.hopcount = inHop;
-				seed2.id = inID;
-				seed2.x = inX;
-				seed2.y = inY;
+			if (inType == TYPE_GRADIENT_BROADCAST && inHop > 0) {
+				if (inHop < inSeeds[inID].hopcount) {
+					// Update our memory of the seed
+					updatedRecently = 100;
+					inSeeds[inID].hopcount = inHop;
+					inSeeds[inID].id = inID;
+					inSeeds[inID].x = inX;
+					inSeeds[inID].y = inY;
 
-				out_message.type = NORMAL;
-
-				out_message.data[0] = inID;
-				out_message.data[1] = inX;
-				out_message.data[2] = inY;
-				out_message.data[3] = inHop + 1;
-
-				// Genereate the crc for the out_message
-				out_message.crc = message_crc(&out_message);
-				//set_color(RGB(2, 2, 2));
+					// Propogate the message
+					out_message.type = NORMAL;
+					out_message.data[0] = TYPE_GRADIENT_BROADCAST;
+					out_message.data[1] = inID;
+					out_message.data[2] = inX;
+					out_message.data[3] = inY;
+					out_message.data[4] = inHop + 1;
+					out_message.crc = message_crc(&out_message);
+				}
 			}
-			if (inID == SEED_A_ID && inHop > 0 && seed1.hopcount > inHop) {
-				updating = 100;
-				cout << id << " update to: " << inHop << endl;
-				seed1.hopcount = inHop;
-				seed1.id = inID;
-				seed1.x = inX;
-				seed1.y = inY;
-
-				out_message.type = NORMAL;
-
-				out_message.data[0] = inID;
-				out_message.data[1] = inX;
-				out_message.data[2] = inY;
-				out_message.data[3] = inHop + 1;
-
-				// Genereate the crc for the out_message
-				out_message.crc = message_crc(&out_message);
-				//set_color(RGB(2, 2, 2));
-			}
-	//}
 
 		rxed=1;
 	}
