@@ -80,7 +80,7 @@ class mykilobot : public kilobot
 		unsigned char x;
 		unsigned char y;
 		unsigned char hopcount;
-		unsigned float smooth_hopcount;
+		float smooth_hopcount;
 	};
 
 	// Handle up to 10 seeds
@@ -252,7 +252,7 @@ class mykilobot : public kilobot
 			out_message.data[1] = inID;
 			out_message.data[2] = inX;
 			out_message.data[3] = inY;
-			out_message.data[4] = inseeds[inID].hopcount + 1;
+			out_message.data[4] = inSeeds[inID].hopcount + 1;
 			out_message.crc = message_crc(&out_message);
 		}
 		rxed=1;
