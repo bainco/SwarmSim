@@ -26,7 +26,7 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients
 	// 2 -> caluclated local positions
   char state;
-	int updating = 100;
+	char updating = 100;
 
 
 	// Variables to store location
@@ -52,10 +52,6 @@ class mykilobot : public kilobot
 	//main loop
 	void loop()
 	{
-		if (updating <= 0) {
-			state = 1;
-			set_color(RGB(1, 0, 2));
-		}
 		// If we're a seed, set location and setup gradient message
 		if (id == SEED_A_ID || id == SEED_B_ID) {
 			myX = id;
@@ -67,7 +63,9 @@ class mykilobot : public kilobot
 			out_message.data[3] = 1;  // send hop-count
 			set_color(RGB(1, 0, 2));
 		}
+
 		else if (state == 0) {
+			updating--;
 			//cout << seed1.hopcount << endl;
 			if (seed1.hopcount % 3 == 0)
 				set_color(RGB(1, 1, 1));
@@ -75,9 +73,12 @@ class mykilobot : public kilobot
 				set_color(RGB(2, 2, 2));
 			else
 				set_color(RGB(0, 0, 0));
+
+			if (updating <= 0) {
+				state = 1;
+				set_color(RGB(1,0,2));
+			}
 		}
-		cout<< updating << endl;
-		if (updating > 0) updating--;
 	}
 
 	//executed once at start
@@ -88,13 +89,9 @@ class mykilobot : public kilobot
 
 		state = 0;
 
+		// Prep out message but leave it blank
 		out_message.type = NORMAL;
-
-		// Genereate the crc for the out_message
 		out_message.crc = message_crc(&out_message);
-
-		// Set our color to purple
-
 	}
 
 	//executed on successfull message send
