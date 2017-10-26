@@ -31,10 +31,15 @@ void setup_positions(float robot_pos[ROBOT_COUNT][4])
 			robot_pos[which][0] = (j * 40) + 25; // Save the new X value
 			robot_pos[which][1] = (i * 40) + 25; // Save the new Y value
 			robot_pos[which][2] = 0; //thetas
-			robot_pos[which][3] = which;
+			//robot_pos[which][3] = which;
 			// Special seed IDs
-			//if (which == 0)  robot_pos[which][3] = 0; //id
-			//else if (which == 31) robot_pos[which][3] = 31;
+			if (which == 0) robot_pos[which][3] = 0; //id
+			else if (which == 31) robot_pos[which][3] = 1;
+
+			// This is only to correct for a bug in the behavior of main where
+			// the id is assigned after it generates a random id so this is just
+			// generating a random id (excepting my specials)
+			else robot_pos[which][3] = (rand() % (RAND_MAX - 2)) + 2;
 			//else robot_pos[which][3] = 999.0;
 		}
 	}

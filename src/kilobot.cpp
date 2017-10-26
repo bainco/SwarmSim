@@ -8,6 +8,9 @@
 #include "kilolib.h"
 #include <iostream>
 
+#define SEED_A_ID 0
+#define SEED_B_ID 1
+
 using namespace std;
 
 class mykilobot : public kilobot
@@ -23,6 +26,7 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients
 	// 2 -> caluclated local positions
   char state;
+	int updating = 100;
 
 
 	// Variables to store location
@@ -39,8 +43,6 @@ class mykilobot : public kilobot
 		unsigned int hopcount;
 	} seed1, seed2;
 
-
-
 	int msrx=0;
 	struct mydata {
 		unsigned int data1;
@@ -50,8 +52,12 @@ class mykilobot : public kilobot
 	//main loop
 	void loop()
 	{
+		if (updating <= 0) {
+			state = 1;
+			set_color(RGB(1, 0, 2));
+		}
 		// If we're a seed, set location and setup gradient message
-		if (id == 31 || id == 0) {
+		if (id == SEED_A_ID || id == SEED_B_ID) {
 			myX = id;
 			myY = 0;
 
@@ -61,15 +67,17 @@ class mykilobot : public kilobot
 			out_message.data[3] = 1;  // send hop-count
 			set_color(RGB(1, 0, 2));
 		}
-		else {
+		else if (state == 0) {
 			//cout << seed1.hopcount << endl;
 			if (seed1.hopcount % 3 == 0)
 				set_color(RGB(1, 1, 1));
-			else if (seed1.hopcount % 3 == 0)
+			else if (seed1.hopcount % 3 == 1)
 				set_color(RGB(2, 2, 2));
 			else
 				set_color(RGB(0, 0, 0));
 		}
+		cout<< updating << endl;
+		if (updating > 0) updating--;
 	}
 
 	//executed once at start
@@ -112,15 +120,16 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
-		if (state == 0) {
+		//if (state == 0) {
 			// [id, x, y, hopcount]
 			int inID = message->data[0]; // We'll say id
 			int inX = message->data[1];
 			int inY = message->data[2];
 			int inHop = message->data[3];
 
-			if (inID == 31 && inHop > 0 && seed2.hopcount > inHop) {
-				cout << "update to: " << inHop << endl;
+			if (inID == SEED_B_ID && inHop > 0 && seed2.hopcount > inHop) {
+				updating = 100;
+				cout << id << " update to: " << inHop << endl;
 				seed2.hopcount = inHop;
 				seed2.id = inID;
 				seed2.x = inX;
@@ -135,10 +144,11 @@ class mykilobot : public kilobot
 
 				// Genereate the crc for the out_message
 				out_message.crc = message_crc(&out_message);
-				set_color(RGB(2, 2, 2));
+				//set_color(RGB(2, 2, 2));
 			}
-			if (inID == 0 && inHop > 0 && seed1.hopcount > inHop) {
-				cout << "update to: " << inHop << endl;
+			if (inID == SEED_A_ID && inHop > 0 && seed1.hopcount > inHop) {
+				updating = 100;
+				cout << id << " update to: " << inHop << endl;
 				seed1.hopcount = inHop;
 				seed1.id = inID;
 				seed1.x = inX;
@@ -153,9 +163,9 @@ class mykilobot : public kilobot
 
 				// Genereate the crc for the out_message
 				out_message.crc = message_crc(&out_message);
-				set_color(RGB(2, 2, 2));
+				//set_color(RGB(2, 2, 2));
 			}
-		}
+	//}
 
 		rxed=1;
 	}
