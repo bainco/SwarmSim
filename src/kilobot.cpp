@@ -11,7 +11,10 @@
 #define TYPE_GRADIENT_BROADCAST 1
 #define SEED_A_ID 0
 #define SEED_B_ID 1
-#define MAX_SEEDS 10
+#define MAX_SEEDS 2
+
+// #define SMOOTHING 0 // for no smoothing
+#define SMOOTHING 0  // for smoothing
 using namespace std;
 
 class mykilobot : public kilobot
@@ -80,9 +83,21 @@ class mykilobot : public kilobot
 
 	int msrx=0;
 
-
 	float distToSeed(unsigned char seedID) {
 		return sqrt(pow(inSeeds[seedID].x - myX, 2) + pow(inSeeds[seedID].y - myY, 2));
+	}
+
+	void displayMyColor() {
+
+		int lookupX = (myX / 40);
+		int lookupY = (myY / 40);
+
+		cout << "lookup "<< lookupX << " " << lookupY << endl;;
+
+		if (theImage[lookupX][lookupY] == 0)
+			set_color(RGB(2, 0, 1));
+		else
+			set_color(RGB(0, 0, 0));
 	}
 
 	//main loop
@@ -91,19 +106,17 @@ class mykilobot : public kilobot
 		// If we're a seed, set location and setup gradient message
 		if (id == SEED_A_ID || id == SEED_B_ID) {
 			// I'm a seed. I know where I am.
-			if(id == SEED_A_ID)
-				myX = 0;
-			else
-				myX = 31;
-			myY = 0;
+			myX = pos[0];
+			myY = pos[1];
 
 			out_message.data[0] = TYPE_GRADIENT_BROADCAST;
 			out_message.data[1] = id; // send id
 			out_message.data[2] = myX; // send x value
 			out_message.data[3] = myY;  // send y value
 			out_message.data[4] = 1;  // send hop-count
-			set_color(RGB(1, 0, 2));
+			set_color(RGB(1, 0, 0));
 		}
+
 		else if (state == 1) {
 			// LOCALIZE
 			float deltaX = 0.0;
@@ -112,7 +125,7 @@ class mykilobot : public kilobot
 			float partDiffX = 0.0;
 			float partDiffY = 0.0;
 
-			float r = 2;
+			float r = 40;
 			float alpha = 0.01;
 
 			for (int i = 0; i < MAX_SEEDS; i++) {
@@ -129,57 +142,11 @@ class mykilobot : public kilobot
 			myY += deltaY;
 
 				cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
-
-				int theX = myX;
-				int theY = myY;
-
-				if (theX > 31)
-					theX = 31;
-				if (theX < 0)
-					theX = 0;
-				if (theY > 31)
-					theY = 31;
-				if (theY < 0)
-					theY = 0;
-
-				if (theImage[theX][theY] == 0)
-					set_color(RGB(2, 0, 1));
-				else
-					set_color(RGB(0, 0, 0));
-		}
-
-
-
-				cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
-
-				int theX = myX;
-				int theY = myY;
-
-				if (theX > 31)
-					theX = 31;
-				if (theX < 0)
-					theX = 0;
-				if (theY > 31)
-					theY = 31;
-				if (theY < 0)
-					theY = 0;
-
-				if (theImage[theX][theY] == 0)
-					set_color(RGB(2, 0, 1));
-				else
-					set_color(RGB(0, 0, 0));
-
+				displayMyColor();
 		}
 
 		else if (state == 0) {
-			updatedRecently--;
-			//cout << seed1.hopcount << endl;
-			if (inSeeds[0].hopcount % 3 == 0)
-				set_color(RGB(1, 1, 1));
-			else if (inSeeds[0].hopcount % 3 == 1)
-				set_color(RGB(2, 2, 2));
-			else
-				set_color(RGB(0, 0, 0));
+			updatedRecently--; // tracker for localization readiness
 
 			if (updatedRecently <= 0) {
 				state = 1;
@@ -187,12 +154,11 @@ class mykilobot : public kilobot
 				unsigned char distance = 255;
 				for (int i = 0; i < MAX_SEEDS; i++) {
 					if (inSeeds[i].hopcount < distance && inSeeds[i].hopcount > 0) {
+						distance = inSeeds[i].hopcount;
 						myX = inSeeds[i].x;
 						myY = inSeeds[i].y;
 					}
 				}
-
-				set_color(RGB(1,0,2));
 			}
 		}
 	}
@@ -236,25 +202,34 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
-		//if (state == 0) {
 			// [type, id, x, y, hopcount]
 			unsigned char inType = message->data[0];
-			// type: 1 -> GRADIENT BROADCAST, 2 -> SMOOTHING BROADCAST,
 			unsigned char inID   = message->data[1];
 			unsigned char inX    = message->data[2];
 			unsigned char inY    = message->data[3];
 			unsigned char inHop  = message->data[4];
 
+			cout << "message rx: " << (int) inType << " " << (int) inID << " " << (int) inX << " " << (int) inY << " " << (int) inHop << endl;
+
+			// Check if it's a valid gradient broadcast
 			if (inType == TYPE_GRADIENT_BROADCAST && inHop > 0) {
-				if (inHop < inSeeds[inID].hopcount) {
-					// Update our memory of the seed
-					updatedRecently = 100;
-					inSeeds[inID].hopcount = inHop;
+
 					inSeeds[inID].id = inID;
 					inSeeds[inID].x = inX;
 					inSeeds[inID].y = inY;
 
-					// Propogate the message
+					//cout << "recorded x: " << inSeeds[inID].x << " " << inSeeds[inID].y << endl;
+					if (inHop < inSeeds[inID].hopcount) {
+						updatedRecently = 100;
+						inSeeds[inID].hopcount = inHop;
+					}
+
+					// If smoothing is on, using exponential moving average for seed hopcounts
+					if (state == 1 && SMOOTHING == 1) {
+						inSeeds[inID].hopcount = (0.6*inHop) + (0.4*inSeeds[inID].hopcount);
+					}
+
+					// Propogate the regular message
 					out_message.type = NORMAL;
 					out_message.data[0] = TYPE_GRADIENT_BROADCAST;
 					out_message.data[1] = inID;
@@ -263,8 +238,6 @@ class mykilobot : public kilobot
 					out_message.data[4] = inHop + 1;
 					out_message.crc = message_crc(&out_message);
 				}
-			}
-
 		rxed=1;
 	}
 };
