@@ -8,17 +8,21 @@
 #include "kilolib.h"
 #include <iostream>
 
+// Message type codes
 #define TYPE_GRADIENT_BROADCAST 1
+
+// SPECIAL SEEDS
 #define SEED_A_ID 0
 #define SEED_B_ID 1
 #define MAX_SEEDS 2
 
-// #define SMOOTHING 0 // for no smoothing
-#define SMOOTHING 0  // for smoothing
+#define SMOOTHING 0 // for no smoothing
+//#define SMOOTHING 1  // for smoothing
 using namespace std;
 
 class mykilobot : public kilobot
 {
+	// The image we need to display
 	unsigned char theImage[32][32] = {
 		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -65,12 +69,12 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients and stable
 	// 2 -> caluclated local positions
 	char state;
-	char updatedRecently = 100;
+	char updatedRecently = 100; // just a counter to say whether or not we've updated recently
 
 	// Variables to store location
 	float myX, myY;
 
-	//
+	// data structure for seeds
 	struct seed {
 		unsigned char id;
 		unsigned char x;
@@ -115,9 +119,11 @@ class mykilobot : public kilobot
 			out_message.data[2] = myX; // send x value
 			out_message.data[3] = myY;  // send y value
 			out_message.data[4] = 1;  // send hop-count
-			set_color(RGB(1, 0, 0));
+			set_color(RGB(1, 0, 0)); // seeds are red
 		}
 
+		// If we received both gradients (and haven't updated recently)
+		// go ahead and attempt to localize
 		else if (state == 1) {
 			// LOCALIZE
 			float deltaX = 0.0;
@@ -131,8 +137,15 @@ class mykilobot : public kilobot
 
 			for (int i = 0; i < MAX_SEEDS; i++) {
 				if (inSeeds[i].hopcount > 0) {
-					partDiffX += ((myX - inSeeds[i].x)*(1 - (distToSeed(i)/(r*inSeeds[i].hopcount))));
-					partDiffY += ((myY - inSeeds[i].y)*(1 - (distToSeed(i)/(r*inSeeds[i].hopcount))));
+
+					float theHopCount = 0.0;
+					if (SMOOTHING == 0)
+						theHopCount = inSeeds[i].hopcount;
+					else
+						theHopCount = inSeeds[i].smooth_hopcount;
+
+					partDiffX += ((myX - inSeeds[i].x)*(1 - (distToSeed(i)/(r*theHopCount))));
+					partDiffY += ((myY - inSeeds[i].y)*(1 - (distToSeed(i)/(r*theHopCount))));
 				}
 			}
 
@@ -146,6 +159,8 @@ class mykilobot : public kilobot
 			displayMyColor();
 		}
 
+		// If you haven't received both gradients (state 0), check to see if you have
+		// if not, go ahead and tick, otherwise, guess at your location
 		else if (state == 0) {
 			updatedRecently--; // tracker for localization readiness
 
@@ -203,7 +218,7 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
-		// [type, id, x, y, hopcount]
+		// read in message: [type, id, x, y, hopcount]
 		unsigned char inType = message->data[0];
 		unsigned char inID   = message->data[1];
 		unsigned char inX    = message->data[2];
