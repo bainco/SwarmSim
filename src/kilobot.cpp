@@ -132,8 +132,8 @@ class mykilobot : public kilobot
 			float partDiffX = 0.0;
 			float partDiffY = 0.0;
 
-			float r = 40;
-			float alpha = 0.01;
+			float r = 160;
+			float alpha = 0.6;
 
 			for (int i = 0; i < MAX_SEEDS; i++) {
 				if (inSeeds[i].hopcount > 0) {
@@ -155,7 +155,7 @@ class mykilobot : public kilobot
 			myX += deltaX;
 			myY += deltaY;
 
-			cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
+			//cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
 			displayMyColor();
 		}
 
@@ -166,6 +166,12 @@ class mykilobot : public kilobot
 
 			if (updatedRecently <= 0) {
 				state = 1;
+				if (inSeeds[1].hopcount % 3 == 0)
+					set_color(RGB(0,0,0));
+				else if (inSeeds[1].hopcount % 3 == 1)
+						set_color(RGB(1,1,1));
+					else
+						set_color(RGB(2,2,2));
 				// find closest seed and just assume we're where they are
 				unsigned char distance = 255;
 				for (int i = 0; i < MAX_SEEDS; i++) {
@@ -175,6 +181,10 @@ class mykilobot : public kilobot
 						myY = inSeeds[i].y;
 					}
 				}
+				if (myX == 241)
+					set_color(RGB(0,2,0));
+				else
+					set_color(RGB(0,0,2));
 			}
 		}
 	}
@@ -225,7 +235,7 @@ class mykilobot : public kilobot
 		unsigned char inY    = message->data[3];
 		unsigned char inHop  = message->data[4];
 
-		cout << "message rx: " << (int) inType << " " << (int) inID << " " << (int) inX << " " << (int) inY << " " << (int) inHop << endl;
+		//cout << "message rx: " << (int) inType << " " << (int) inID << " " << (int) inX << " " << (int) inY << " " << (int) inHop << endl;
 
 		// Check if it's a valid gradient broadcast
 		if (inType == TYPE_GRADIENT_BROADCAST && inHop > 0) {
