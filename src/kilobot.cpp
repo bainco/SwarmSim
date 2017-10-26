@@ -105,18 +105,51 @@ class mykilobot : public kilobot
 			set_color(RGB(1, 0, 2));
 		}
 		else if (state == 1) {
+			// LOCALIZE
+			float deltaX = 0.0;
+			float deltaY = 0.0;
 
-			unsigned char bigID;
+			float partDiffX = 0.0;
+			float partDiffY = 0.0;
 
-			if (inSeeds[0].hopcount < inSeeds[1].hopcount)
-				bigID = 1;
-			else
-				 bigID = 0;
+			float r = 2;
+			float alpha = 0.01;
 
-			float r = 3;
-			myX = (pow(31, 2) - pow(r*inSeeds[(bigID + 1) % 2].hopcount, 2) + pow(r*inSeeds[bigID].hopcount,2))/(2*31);
-			myY = sqrt(pow(r*inSeeds[bigID].hopcount, 2) - pow(myX, 2));
-			state = 2;
+			for (int i = 0; i < MAX_SEEDS; i++) {
+				if (inSeeds[i].hopcount > 0) {
+					partDiffX += ((myX - inSeeds[i].x)*(1 - (distToSeed(i)/(r*inSeeds[i].hopcount))));
+					partDiffY += ((myY - inSeeds[i].y)*(1 - (distToSeed(i)/(r*inSeeds[i].hopcount))));
+				}
+			}
+
+			deltaX = (-1 * alpha) * partDiffX;
+			deltaY = (-1 * alpha) * partDiffY;
+
+			myX += deltaX;
+			myY += deltaY;
+
+				cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
+
+				int theX = myX;
+				int theY = myY;
+
+				if (theX > 31)
+					theX = 31;
+				if (theX < 0)
+					theX = 0;
+				if (theY > 31)
+					theY = 31;
+				if (theY < 0)
+					theY = 0;
+
+				if (theImage[theX][theY] == 0)
+					set_color(RGB(2, 0, 1));
+				else
+					set_color(RGB(0, 0, 0));
+		}
+
+
+
 				cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
 
 				int theX = myX;
