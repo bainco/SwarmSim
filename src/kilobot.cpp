@@ -16,7 +16,7 @@
 #define SEED_B_ID 1
 #define MAX_SEEDS 2
 
-#define SMOOTHING 0 // for no smoothing
+#define SMOOTHING 1 // for no smoothing
 //#define SMOOTHING 1  // for smoothing
 using namespace std;
 
@@ -69,7 +69,7 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients and stable
 	// 2 -> caluclated local positions
 	char state;
-	char updatedRecently = 100; // just a counter to say whether or not we've updated recently
+	int updatedRecently = 500; // just a counter to say whether or not we've updated recently1000
 
 	// Variables to store location
 	float myX, myY;
@@ -94,8 +94,18 @@ class mykilobot : public kilobot
 
 	void displayMyColor() {
 
-		unsigned int lookupX = (myX / 40);
-		unsigned int lookupY = (myY / 40);
+		int lookupX = myX;
+		int lookupY = myY;
+
+		if (lookupX < 0)
+			lookupX = 0;
+		else if (lookupX > 31)
+			lookupX = 31;
+
+			if (lookupY < 0)
+				lookupY = 0;
+			else if (lookupY > 31)
+				lookupY = 31;
 
 		cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
@@ -126,36 +136,26 @@ class mykilobot : public kilobot
 
 		// If we received both gradients (and haven't updated recently)
 		// go ahead and attempt to localize
-		else if (false) {
+		else if (state == 1) {
 			// LOCALIZE
-			float deltaX = 0.0;
-			float deltaY = 0.0;
+			float r_mod = 3.75;
+			float d = 31;
+			float R;
+			float r;
+			if (SMOOTHING == 0) {
+				R = r_mod*((int)inSeeds[0].hopcount);
+				r = r_mod*((int)inSeeds[1].hopcount);
+		}
+		else {
+		  R = r_mod*(inSeeds[0].smooth_hopcount);
+			r = r_mod*(inSeeds[1].smooth_hopcount);
+		}
+			cout << "mypos " << pos[0] << " " << pos[1]<< "hop measure " << (int)inSeeds[0].hopcount << " " << R << " " << (int)inSeeds[1].hopcount << " "  << r << endl;
 
-			float partDiffX = 0.0;
-			float partDiffY = 0.0;
+			myX = (pow(d,2)-pow(r, 2)+pow(R, 2)) / (2*d);
+			myY = sqrt((-d + r - R)*(-d - r + R)*(-d + r + R)*(d + r + R))/(2*d);
 
-			float r = 3.5;
-			float alpha = 0.01;
-
-			for (int i = 0; i < MAX_SEEDS; i++) {
-				if (inSeeds[i].hopcount > 0) {
-
-					float theHopCount = 0.0;
-					if (SMOOTHING == 0)
-						theHopCount = inSeeds[i].hopcount;
-					else
-						theHopCount = inSeeds[i].smooth_hopcount;
-
-					partDiffX += ((myX - inSeeds[i].x)*(1 - (distToSeed(i)/(r*theHopCount))));
-					partDiffY += ((myY - inSeeds[i].y)*(1 - (distToSeed(i)/(r*theHopCount))));
-				}
-			}
-
-			deltaX = (-1 * alpha) * partDiffX;
-			deltaY = (-1 * alpha) * partDiffY;
-
-			myX += deltaX;
-			myY += deltaY;
+			state = 2;
 
 			//cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
 			displayMyColor();
@@ -168,12 +168,12 @@ class mykilobot : public kilobot
 
 			if (updatedRecently <= 0) {
 				state = 1;
-				if (inSeeds[1].hopcount % 3 == 0)
-					set_color(RGB(0,0,0));
-				else if (inSeeds[1].hopcount % 3 == 1)
-						set_color(RGB(1,1,1));
-					else
+				if (inSeeds[0].hopcount == 2)
+					set_color(RGB(1,1,1));
+				else if (inSeeds[0].hopcount == 3)
 						set_color(RGB(2,2,2));
+					else
+						set_color(RGB(0,0,0));
 				// find losest seed and just assume we're where they are
 				unsigned char distance = 255;
 				for (int i = 0; i < MAX_SEEDS; i++) {
@@ -183,7 +183,7 @@ class mykilobot : public kilobot
 						myY = inSeeds[i].y;
 					}
 				}
-				/*(if (myX == 31)
+				/*if (myX == 31)
 					set_color(RGB(0,2,0));
 				else
 					set_color(RGB(0,0,2));*/
@@ -249,7 +249,7 @@ class mykilobot : public kilobot
 
 			//cout << "recorded x: " << inSeeds[inID].x << " " << inSeeds[inID].y << endl;
 			if (state == 0 && inHop < inSeeds[inID].hopcount) {
-				updatedRecently = 100;
+				updatedRecently = 500;
 				inSeeds[inID].hopcount = inHop;
 				inSeeds[inID].smooth_hopcount = inHop;
 			}
