@@ -94,8 +94,8 @@ class mykilobot : public kilobot
 
 	void displayMyColor() {
 
-		int lookupX = (myX / 40);
-		int lookupY = (myY / 40);
+		unsigned int lookupX = (myX / 40);
+		unsigned int lookupY = (myY / 40);
 
 		cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
@@ -111,8 +111,10 @@ class mykilobot : public kilobot
 		// If we're a seed, set location and setup gradient message
 		if (id == SEED_A_ID || id == SEED_B_ID) {
 			// I'm a seed. I know where I am.
-			myX = pos[0];
-			myY = pos[1];
+			if (id == SEED_A_ID)
+				myX = 0;
+			else myX = 31;
+			myY = 0;
 
 			out_message.data[0] = TYPE_GRADIENT_BROADCAST;
 			out_message.data[1] = id; // send id
@@ -124,7 +126,7 @@ class mykilobot : public kilobot
 
 		// If we received both gradients (and haven't updated recently)
 		// go ahead and attempt to localize
-		else if (state == 1) {
+		else if (false) {
 			// LOCALIZE
 			float deltaX = 0.0;
 			float deltaY = 0.0;
@@ -132,8 +134,8 @@ class mykilobot : public kilobot
 			float partDiffX = 0.0;
 			float partDiffY = 0.0;
 
-			float r = 160;
-			float alpha = 0.6;
+			float r = 3.5;
+			float alpha = 0.01;
 
 			for (int i = 0; i < MAX_SEEDS; i++) {
 				if (inSeeds[i].hopcount > 0) {
@@ -172,7 +174,7 @@ class mykilobot : public kilobot
 						set_color(RGB(1,1,1));
 					else
 						set_color(RGB(2,2,2));
-				// find closest seed and just assume we're where they are
+				// find losest seed and just assume we're where they are
 				unsigned char distance = 255;
 				for (int i = 0; i < MAX_SEEDS; i++) {
 					if (inSeeds[i].hopcount < distance && inSeeds[i].hopcount > 0) {
@@ -181,10 +183,10 @@ class mykilobot : public kilobot
 						myY = inSeeds[i].y;
 					}
 				}
-				if (myX == 241)
+				/*(if (myX == 31)
 					set_color(RGB(0,2,0));
 				else
-					set_color(RGB(0,0,2));
+					set_color(RGB(0,0,2));*/
 			}
 		}
 	}
@@ -195,6 +197,7 @@ class mykilobot : public kilobot
 		// Max out all seed hopcounts
 		for (char i = 0; i < MAX_SEEDS; i++) {
 			inSeeds[i].hopcount = 255;
+			inSeeds[i].smooth_hopcount = 0.0;
 		}
 
 		// We all start in state 0
@@ -253,7 +256,7 @@ class mykilobot : public kilobot
 
 			// If smoothing is on, using exponential moving average for seed hopcounts
 			if (state == 1 && SMOOTHING == 1) {
-				inSeeds[inID].smooth_hopcount = (0.6*inHop) + (0.4*inSeeds[inID].smooth_hopcount);
+				inSeeds[inID].smooth_hopcount = ((float) (0.9*inHop)) + (0.1*inSeeds[inID].smooth_hopcount);
 			}
 
 			// Propogate the regular message
