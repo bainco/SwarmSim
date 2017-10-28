@@ -97,22 +97,12 @@ class mykilobot : public kilobot
 		int lookupX = myX;
 		int lookupY = myY;
 
-		if (lookupX < 0)
-		lookupX = 0;
-		else if (lookupX > 31)
-		lookupX = 31;
-
-		if (lookupY < 0)
-		lookupY = 0;
-		else if (lookupY > 31)
-		lookupY = 31;
-
 		cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
 		if (theImage[lookupX][lookupY] == 0)
 		set_color(RGB(2, 0, 1));
 		else
-		set_color(RGB(0, 0, 0));
+		set_color(RGB(1, 1, 1));
 	}
 
 	//main loop
