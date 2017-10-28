@@ -88,8 +88,8 @@ class mykilobot : public kilobot
 
 	int msrx=0;
 
-	float distToSeed(unsigned char seedID) {
-		return sqrt(pow(inSeeds[seedID].x - myX, 2) + pow(inSeeds[seedID].y - myY, 2));
+	float distToSeed(unsigned char seedID, float x, float y) {
+		return sqrt(pow(inSeeds[seedID].x - x, 2) + pow(inSeeds[seedID].y - y, 2));
 	}
 
 	void displayMyColor() {
@@ -98,14 +98,14 @@ class mykilobot : public kilobot
 		int lookupY = myY;
 
 		if (lookupX < 0)
-			lookupX = 0;
+		lookupX = 0;
 		else if (lookupX > 31)
-			lookupX = 31;
+		lookupX = 31;
 
-			if (lookupY < 0)
-				lookupY = 0;
-			else if (lookupY > 31)
-				lookupY = 31;
+		if (lookupY < 0)
+		lookupY = 0;
+		else if (lookupY > 31)
+		lookupY = 31;
 
 		cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
@@ -122,7 +122,7 @@ class mykilobot : public kilobot
 		if (id == SEED_A_ID || id == SEED_B_ID) {
 			// I'm a seed. I know where I am.
 			if (id == SEED_A_ID)
-				myX = 0;
+			myX = 0;
 			else myX = 31;
 			myY = 0;
 
@@ -138,26 +138,31 @@ class mykilobot : public kilobot
 		// go ahead and attempt to localize
 		else if (state == 1) {
 			// LOCALIZE
-			float r_mod = 3.75;
-			float d = 31;
-			float R;
-			float r;
-			if (SMOOTHING == 0) {
-				R = r_mod*((int)inSeeds[0].hopcount);
-				r = r_mod*((int)inSeeds[1].hopcount);
-		}
-		else {
-		  R = r_mod*(inSeeds[0].smooth_hopcount);
-			r = r_mod*(inSeeds[1].smooth_hopcount);
-		}
-			cout << "mypos " << pos[0] << " " << pos[1]<< "hop measure " << (int)inSeeds[0].hopcount << " " << R << " " << (int)inSeeds[1].hopcount << " "  << r << endl;
+			float r = 3.75;
+			float error;
+			float theHopCount;
+			if (SMOOTHING == 1)
+				theHopCount = inSeeds[i].smooth_hopcount;
+			else
+				theHopCount = inSeeds[i].hopcount;
 
-			myX = (pow(d,2)-pow(r, 2)+pow(R, 2)) / (2*d);
-			myY = sqrt((-d + r - R)*(-d - r + R)*(-d + r + R)*(d + r + R))/(2*d);
+			float max_error = 1000000;
+			for (int x = 0; x < 32; x++) {
+				for (int y = 0; y < 32; y++) {
+					error = 0.0
+					for (int i = 0; i < MAX_SEEDS; i++) {
+						error += abs(distToSeed(i, x, y) - (r*theHopCount));
+					}
+					if (error < max_error) {
+						myX = x;
+						myY = y;
+						max_error = error;
+					}
+				}
+			}
 
 			state = 2;
 
-			//cout << "actual: " << pos[0] << "," << pos[1] << " predicted: " << myX << "," << myY << endl;
 			displayMyColor();
 		}
 
@@ -168,25 +173,6 @@ class mykilobot : public kilobot
 
 			if (updatedRecently <= 0) {
 				state = 1;
-				if (inSeeds[0].hopcount == 2)
-					set_color(RGB(1,1,1));
-				else if (inSeeds[0].hopcount == 3)
-						set_color(RGB(2,2,2));
-					else
-						set_color(RGB(0,0,0));
-				// find losest seed and just assume we're where they are
-				unsigned char distance = 255;
-				for (int i = 0; i < MAX_SEEDS; i++) {
-					if (inSeeds[i].hopcount < distance && inSeeds[i].hopcount > 0) {
-						distance = inSeeds[i].hopcount;
-						myX = inSeeds[i].x;
-						myY = inSeeds[i].y;
-					}
-				}
-				/*if (myX == 31)
-					set_color(RGB(0,2,0));
-				else
-					set_color(RGB(0,0,2));*/
 			}
 		}
 	}
