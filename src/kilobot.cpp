@@ -151,7 +151,7 @@ class mykilobot : public kilobot
 							theHopCount = inSeeds[i].smooth_hopcount;
 						else
 							theHopCount = inSeeds[i].hopcount;
-						error += abs(distToSeed(i, x, y) - (r*theHopCount));
+						error += fabs(distToSeed(i, x, y) - (r*theHopCount));
 					}
 					if (error < max_error) {
 						myX = x;
