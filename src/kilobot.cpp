@@ -97,7 +97,7 @@ class mykilobot : public kilobot
 		int lookupX = myX;
 		int lookupY = myY;
 
-		//cout << "lookup "<< lookupX << " " << lookupY << endl;;
+		cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
 		if (theImage[lookupX][lookupY] == 0)
 		set_color(RGB(2, 0, 1));
