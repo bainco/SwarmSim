@@ -14,8 +14,8 @@
 #define SIMULATION_TIME 180 //in seconds
 
 
-//#define TOPOLOGY 1 // for hex
-#define TOPOLOGY 0 // for rectangle
+#define TOPOLOGY 1 // for hex
+//#define TOPOLOGY 0 // for rectangle
 
 #include <iostream>
 

@@ -16,8 +16,8 @@
 #define SEED_B_ID 1
 #define MAX_SEEDS 2
 
-#define SMOOTHING 0 // for no smoothing
-//#define SMOOTHING 1  // for smoothing
+//#define SMOOTHING 0 // for no smoothing
+#define SMOOTHING 1  // for smoothing
 using namespace std;
 
 class mykilobot : public kilobot
@@ -69,7 +69,7 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients and stable
 	// 2 -> caluclated local positions
 	char state;
-	int updatedRecently = 100; // just a counter to say whether or not we've updated recently1000
+	int updatedRecently = 200; // just a counter to say whether or not we've updated recently1000
 
 	// Variables to store location
 	float myX, myY;
@@ -88,8 +88,12 @@ class mykilobot : public kilobot
 
 	int msrx=0;
 
-	float distToSeed(unsigned char seedID, float x, float y) {
-		return sqrt(pow(inSeeds[seedID].x - x, 2) + pow(inSeeds[seedID].y - y, 2));
+	float distToSeed(unsigned char seedID, int x, int y) {
+		//cout << "from " << (int) inSeeds[seedID].x << " " << (int) inSeeds[seedID].y << " to " << x << " " << y << endl;
+		float dist = sqrt(pow(inSeeds[seedID].x - x, 2) + pow(inSeeds[seedID].y - y, 2));
+		//cout << dist << endl;
+
+		return dist;
 	}
 
 	void displayMyColor() {
@@ -97,9 +101,12 @@ class mykilobot : public kilobot
 		int lookupX = myX;
 		int lookupY = myY;
 
-		cout << "lookup "<< lookupX << " " << lookupY << endl;;
+		lookupY = 31 - lookupY;
+		
 
-		if (theImage[lookupX][lookupY] == 0)
+		//cout << "lookup "<< lookupX << " " << lookupY << endl;;
+
+		if (theImage[lookupY][lookupX] == 0)
 		set_color(RGB(2, 0, 1));
 		else
 		set_color(RGB(1, 1, 1));
@@ -131,20 +138,25 @@ class mykilobot : public kilobot
 			float max_r_error = 1000000;
 			float best_r;
 
-			//for (float r = 2.0; r < 8.0; r = r + 0.1) {
-			float r = 5;
+		//for (float r = 3.8; r < 4; r = r + 0.05) {
+			float r = 3.75;
+
 			float error;
 			float theHopCount;
+
+			//cout << inSeeds[0].smooth_hopcount << " vs " << (int) inSeeds[0].hopcount << endl;
+			//cout << inSeeds[1].smooth_hopcount << " vs " << (int) inSeeds[1].hopcount << endl;
 
 			float max_error = 1000000;
 			for (int x = 0; x < 32; x++) {
 				for (int y = 0; y < 32; y++) {
 					error = 0.0;
 					for (int i = 0; i < MAX_SEEDS; i++) {
-						if (SMOOTHING == 1)
+						if (SMOOTHING == 1) {
 							theHopCount = inSeeds[i].smooth_hopcount;
-						else
-							theHopCount = inSeeds[i].hopcount;
+						}
+						else theHopCount = inSeeds[i].hopcount;
+						//cout << theHopCount << " " << r << " " << (r*theHopCount) << endl;
 						error += fabs(distToSeed(i, x, y) - (r*theHopCount));
 					}
 					if (error < max_error) {
@@ -160,8 +172,8 @@ class mykilobot : public kilobot
 			}
 		//}
 
-		//	cout << best_r << endl;
-			state = 2;
+			//cout << best_r << endl;
+			//state = 2;
 
 			displayMyColor();
 		}
@@ -171,9 +183,12 @@ class mykilobot : public kilobot
 		else if (state == 0) {
 			updatedRecently--; // tracker for localization readiness
 
-			if (updatedRecently <= 0) {
+			if (updatedRecently <= 0 && inSeeds[0].hopcount != 255 && inSeeds[1].hopcount != 255) {
 				state = 1;
+				inSeeds[0].smooth_hopcount = inSeeds[0].hopcount;
+				inSeeds[1].smooth_hopcount = inSeeds[1].hopcount;
 			}
+			if (inSeeds[0].hopcount == 255 || inSeeds[1].hopcount == 255) updatedRecently = 200;
 		}
 	}
 
@@ -206,8 +221,11 @@ class mykilobot : public kilobot
 		static int count = rand();
 
 		count--;
-		// Send every 10 cycles
-		if (!(count % 10))
+		// Send every c cycles
+		int cycleRate = 20;
+		if (id == SEED_A_ID || id == SEED_B_ID)
+			cycleRate = 5;
+		if (!(count % cycleRate))
 		{
 			return &out_message;
 		}
@@ -217,6 +235,7 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
+		if (id != SEED_A_ID && id != SEED_B_ID) {
 		// read in message: [type, id, x, y, hopcount]
 		unsigned char inType = message->data[0];
 		unsigned char inID   = message->data[1];
@@ -235,14 +254,13 @@ class mykilobot : public kilobot
 
 			//cout << "recorded x: " << inSeeds[inID].x << " " << inSeeds[inID].y << endl;
 			if (state == 0 && inHop < inSeeds[inID].hopcount) {
-				updatedRecently = 100;
+				updatedRecently = 200;
 				inSeeds[inID].hopcount = inHop;
-				inSeeds[inID].smooth_hopcount = inHop;
 			}
 
 			// If smoothing is on, using exponential moving average for seed hopcounts
 			if (state == 1 && SMOOTHING == 1) {
-				inSeeds[inID].smooth_hopcount = ((float) (0.9*inHop)) + (0.1*inSeeds[inID].smooth_hopcount);
+				inSeeds[inID].smooth_hopcount = (0.05* ((float) (inHop - 1))) + (0.95*inSeeds[inID].smooth_hopcount);
 			}
 
 			// Propogate the regular message
@@ -255,5 +273,6 @@ class mykilobot : public kilobot
 			out_message.crc = message_crc(&out_message);
 		}
 		rxed=1;
+}
 	}
 };
