@@ -141,16 +141,16 @@ class mykilobot : public kilobot
 			float r = 3.75;
 			float error;
 			float theHopCount;
-			if (SMOOTHING == 1)
-				theHopCount = inSeeds[i].smooth_hopcount;
-			else
-				theHopCount = inSeeds[i].hopcount;
 
 			float max_error = 1000000;
 			for (int x = 0; x < 32; x++) {
 				for (int y = 0; y < 32; y++) {
 					error = 0.0
 					for (int i = 0; i < MAX_SEEDS; i++) {
+						if (SMOOTHING == 1)
+							theHopCount = inSeeds[i].smooth_hopcount;
+						else
+							theHopCount = inSeeds[i].hopcount;
 						error += abs(distToSeed(i, x, y) - (r*theHopCount));
 					}
 					if (error < max_error) {
