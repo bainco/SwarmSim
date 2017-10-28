@@ -97,7 +97,7 @@ class mykilobot : public kilobot
 		int lookupX = myX;
 		int lookupY = myY;
 
-		cout << "lookup "<< lookupX << " " << lookupY << endl;;
+		//cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
 		if (theImage[lookupX][lookupY] == 0)
 		set_color(RGB(2, 0, 1));
@@ -160,6 +160,7 @@ class mykilobot : public kilobot
 			}
 		}
 
+			cout << "best r: " << best_r << endl;
 			state = 2;
 
 			displayMyColor();
