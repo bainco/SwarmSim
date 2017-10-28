@@ -69,7 +69,7 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients and stable
 	// 2 -> caluclated local positions
 	char state;
-	int updatedRecently = 500; // just a counter to say whether or not we've updated recently1000
+	int updatedRecently = 100; // just a counter to say whether or not we've updated recently1000
 
 	// Variables to store location
 	float myX, myY;
@@ -138,7 +138,7 @@ class mykilobot : public kilobot
 		// go ahead and attempt to localize
 		else if (state == 1) {
 			// LOCALIZE
-			float r = 5;
+			float r = 4;
 			float error;
 			float theHopCount;
 
@@ -235,7 +235,7 @@ class mykilobot : public kilobot
 
 			//cout << "recorded x: " << inSeeds[inID].x << " " << inSeeds[inID].y << endl;
 			if (state == 0 && inHop < inSeeds[inID].hopcount) {
-				updatedRecently = 500;
+				updatedRecently = 100;
 				inSeeds[inID].hopcount = inHop;
 				inSeeds[inID].smooth_hopcount = inHop;
 			}
