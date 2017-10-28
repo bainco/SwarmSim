@@ -128,7 +128,7 @@ class mykilobot : public kilobot
 		// go ahead and attempt to localize
 		else if (state == 1) {
 			// LOCALIZE
-			float max_r_error;
+			float max_r_error = 1000000;
 			float best_r;
 
 			for (float r = 2.0; r < 6.0; r = r + 0.1) {
