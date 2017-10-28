@@ -138,7 +138,7 @@ class mykilobot : public kilobot
 		// go ahead and attempt to localize
 		else if (state == 1) {
 			// LOCALIZE
-			float r = 3.75;
+			float r = 5;
 			float error;
 			float theHopCount;
 
