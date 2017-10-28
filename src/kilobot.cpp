@@ -131,8 +131,8 @@ class mykilobot : public kilobot
 			float max_r_error = 1000000;
 			float best_r;
 
-			for (float r = 2.0; r < 8.0; r = r + 0.1) {
-
+			//for (float r = 2.0; r < 8.0; r = r + 0.1) {
+			float r = 4.11;
 			float error;
 			float theHopCount;
 
@@ -158,9 +158,9 @@ class mykilobot : public kilobot
 				best_r = r;
 				max_r_error = max_error;
 			}
-		}
+		//}
 
-			cout << best_r << endl;
+		//	cout << best_r << endl;
 			state = 2;
 
 			displayMyColor();
