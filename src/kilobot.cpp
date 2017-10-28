@@ -16,7 +16,7 @@
 #define SEED_B_ID 1
 #define MAX_SEEDS 2
 
-#define SMOOTHING 1 // for no smoothing
+#define SMOOTHING 0 // for no smoothing
 //#define SMOOTHING 1  // for smoothing
 using namespace std;
 
