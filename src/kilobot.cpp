@@ -1,7 +1,12 @@
 /************************
-**** Assignment 1 - kilobot.cpp
+**** Assignment 1 (late) - kilobot.cpp
 **** EECS 496
+**** Date: 10/28/2017
 **** Name: Connor Bain
+****
+Changes since last submission:
+	+ Implemented brute-force multilateration
+	+ Tweaked 'r' (comm dist)
 ************************/
 
 #pragma once
@@ -69,7 +74,7 @@ class mykilobot : public kilobot
 	// 1 -> received both gradients and stable
 	// 2 -> caluclated local positions
 	char state;
-	int updatedRecently = 200; // just a counter to say whether or not we've updated recently1000
+	int updatedRecently = 200; // just a counter to say whether or not we've updated recently
 
 	// Variables to store location
 	float myX, myY;
@@ -82,34 +87,28 @@ class mykilobot : public kilobot
 		unsigned char hopcount;
 		float smooth_hopcount;
 	};
-
-	// Handle up to 10 seeds
-	seed inSeeds[MAX_SEEDS];
+	seed inSeeds[MAX_SEEDS]; // to store seed info in
 
 	int msrx=0;
 
+	// Method to calculate the distance from any point to any seed
 	float distToSeed(unsigned char seedID, int x, int y) {
-		//cout << "from " << (int) inSeeds[seedID].x << " " << (int) inSeeds[seedID].y << " to " << x << " " << y << endl;
 		float dist = sqrt(pow(inSeeds[seedID].x - x, 2) + pow(inSeeds[seedID].y - y, 2));
-		//cout << dist << endl;
-
 		return dist;
 	}
 
+	// Method to display the color based on our shape and location
 	void displayMyColor() {
 
 		int lookupX = myX;
 		int lookupY = myY;
 
 		lookupY = 31 - lookupY;
-		
-
-		//cout << "lookup "<< lookupX << " " << lookupY << endl;;
 
 		if (theImage[lookupY][lookupX] == 0)
-		set_color(RGB(2, 0, 1));
+			set_color(RGB(2, 0, 1));
 		else
-		set_color(RGB(1, 1, 1));
+			set_color(RGB(1, 1, 1));
 	}
 
 	//main loop
@@ -119,9 +118,9 @@ class mykilobot : public kilobot
 		if (id == SEED_A_ID || id == SEED_B_ID) {
 			// I'm a seed. I know where I am.
 			if (id == SEED_A_ID)
-			myX = 0;
+				myX = 0;
 			else myX = 31;
-			myY = 0;
+				myY = 0;
 
 			out_message.data[0] = TYPE_GRADIENT_BROADCAST;
 			out_message.data[1] = id; // send id
@@ -131,32 +130,21 @@ class mykilobot : public kilobot
 			set_color(RGB(1, 0, 0)); // seeds are red
 		}
 
-		// If we received both gradients (and haven't updated recently)
-		// go ahead and attempt to localize
+		// If we received both gradients go ahead and perform multilateration
 		else if (state == 1) {
-			// LOCALIZE
-			float max_r_error = 1000000;
-			float best_r;
-
-		//for (float r = 3.8; r < 4; r = r + 0.05) {
 			float r = 3.75;
 
 			float error;
 			float theHopCount;
-
-			//cout << inSeeds[0].smooth_hopcount << " vs " << (int) inSeeds[0].hopcount << endl;
-			//cout << inSeeds[1].smooth_hopcount << " vs " << (int) inSeeds[1].hopcount << endl;
-
 			float max_error = 1000000;
 			for (int x = 0; x < 32; x++) {
 				for (int y = 0; y < 32; y++) {
 					error = 0.0;
 					for (int i = 0; i < MAX_SEEDS; i++) {
-						if (SMOOTHING == 1) {
+						if (SMOOTHING == 1)
 							theHopCount = inSeeds[i].smooth_hopcount;
-						}
-						else theHopCount = inSeeds[i].hopcount;
-						//cout << theHopCount << " " << r << " " << (r*theHopCount) << endl;
+						else
+							theHopCount = inSeeds[i].hopcount;
 						error += fabs(distToSeed(i, x, y) - (r*theHopCount));
 					}
 					if (error < max_error) {
@@ -166,15 +154,6 @@ class mykilobot : public kilobot
 					}
 				}
 			}
-			if (max_error < max_r_error) {
-				best_r = r;
-				max_r_error = max_error;
-			}
-		//}
-
-			//cout << best_r << endl;
-			//state = 2;
-
 			displayMyColor();
 		}
 
@@ -188,6 +167,7 @@ class mykilobot : public kilobot
 				inSeeds[0].smooth_hopcount = inSeeds[0].hopcount;
 				inSeeds[1].smooth_hopcount = inSeeds[1].hopcount;
 			}
+			// If you haven't received one of the gradients, reset your counter
 			if (inSeeds[0].hopcount == 255 || inSeeds[1].hopcount == 255) updatedRecently = 200;
 		}
 	}
@@ -236,43 +216,40 @@ class mykilobot : public kilobot
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement)
 	{
 		if (id != SEED_A_ID && id != SEED_B_ID) {
-		// read in message: [type, id, x, y, hopcount]
-		unsigned char inType = message->data[0];
-		unsigned char inID   = message->data[1];
-		unsigned char inX    = message->data[2];
-		unsigned char inY    = message->data[3];
-		unsigned char inHop  = message->data[4];
+			// read in message: [type, id, x, y, hopcount]
+			unsigned char inType = message->data[0];
+			unsigned char inID   = message->data[1];
+			unsigned char inX    = message->data[2];
+			unsigned char inY    = message->data[3];
+			unsigned char inHop  = message->data[4];
 
-		//cout << "message rx: " << (int) inType << " " << (int) inID << " " << (int) inX << " " << (int) inY << " " << (int) inHop << endl;
+			// Check if it's a valid gradient broadcast
+			if (inType == TYPE_GRADIENT_BROADCAST && inHop > 0) {
 
-		// Check if it's a valid gradient broadcast
-		if (inType == TYPE_GRADIENT_BROADCAST && inHop > 0) {
+				inSeeds[inID].id = inID;
+				inSeeds[inID].x = inX;
+				inSeeds[inID].y = inY;
 
-			inSeeds[inID].id = inID;
-			inSeeds[inID].x = inX;
-			inSeeds[inID].y = inY;
+				if (state == 0 && inHop < inSeeds[inID].hopcount) {
+					updatedRecently = 200;
+					inSeeds[inID].hopcount = inHop;
+				}
 
-			//cout << "recorded x: " << inSeeds[inID].x << " " << inSeeds[inID].y << endl;
-			if (state == 0 && inHop < inSeeds[inID].hopcount) {
-				updatedRecently = 200;
-				inSeeds[inID].hopcount = inHop;
+				// If smoothing is on, using exponential moving average for smooth hopcounts
+				if (state == 1 && SMOOTHING == 1) {
+					inSeeds[inID].smooth_hopcount = (0.05* ((float) (inHop - 1))) + (0.95*inSeeds[inID].smooth_hopcount);
+				}
+
+				// Propogate the regular message
+				out_message.type = NORMAL;
+				out_message.data[0] = TYPE_GRADIENT_BROADCAST;
+				out_message.data[1] = inID;
+				out_message.data[2] = inX;
+				out_message.data[3] = inY;
+				out_message.data[4] = inSeeds[inID].hopcount + 1;
+				out_message.crc = message_crc(&out_message);
 			}
-
-			// If smoothing is on, using exponential moving average for seed hopcounts
-			if (state == 1 && SMOOTHING == 1) {
-				inSeeds[inID].smooth_hopcount = (0.05* ((float) (inHop - 1))) + (0.95*inSeeds[inID].smooth_hopcount);
-			}
-
-			// Propogate the regular message
-			out_message.type = NORMAL;
-			out_message.data[0] = TYPE_GRADIENT_BROADCAST;
-			out_message.data[1] = inID;
-			out_message.data[2] = inX;
-			out_message.data[3] = inY;
-			out_message.data[4] = inSeeds[inID].hopcount + 1;
-			out_message.crc = message_crc(&out_message);
+			rxed=1;
 		}
-		rxed=1;
-}
 	}
 };

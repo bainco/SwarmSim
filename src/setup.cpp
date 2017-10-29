@@ -1,7 +1,11 @@
 /************************
-**** Assignment 1 - setup.cpp
+**** Assignment 1 (late) - setup.cpp
 **** EECS 496
+**** Date: 10/28/2017
 **** Name: Connor Bain
+****
+Changes since last submission:
+	none
 ************************/
 
 #define ARENA_WIDTH 1300
