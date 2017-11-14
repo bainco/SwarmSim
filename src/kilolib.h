@@ -29,11 +29,12 @@ public:
 	int kilo_ticks = 0;
 
 	double distance_measurement;
+	float theta;
 	bool message_sent = false;
 
-	struct rgb { unsigned char red, green, blue; };
+	struct rgb { double red, green, blue; };
 
-	rgb RGB(unsigned char r, unsigned char g, unsigned char b)
+	rgb RGB(double r, double g, double b)
 	{
 		rgb c;
 		c.red = r;
@@ -49,12 +50,12 @@ public:
 
 	unsigned char rand_soft()
 	{
-		return rand() * 255;
+		return rand() * 255 / RAND_MAX;
 	}
 
 	unsigned char rand_hard()
 	{
-		return rand() * 255;
+		return rand() * 255 / RAND_MAX;
 	}
 
 	unsigned char message_crc(message_t *m)
@@ -69,9 +70,9 @@ public:
 
 	void set_color(rgb c)
 	{
-		color[0] = float(c.red & 3)/3;
-		color[1] = float(c.green & 3)/3;
-		color[2] = float(c.blue & 3)/3;
+		color[0] = c.red;
+		color[1] = c.green;
+		color[2] = c.blue;
 	}
 
 	virtual void setup()=0;
@@ -84,10 +85,20 @@ public:
 	}
 
 	virtual void loop() = 0;
-	virtual void message_rx(message_t *message, distance_measurement_t *distance_measurement) = 0;
+	virtual void message_rx(message_t *message, distance_measurement_t *distance_measurement,float theta) = 0;
 
 	void controller()
 	{
+		//if (pos[0] > 1000 && pos[0] < 1005 && pos[1]>1000 && pos[1] < 1005)
+		//{
+		//	distance_measurement = 35;
+		//	message_t m;
+		//	m.data[0] = 1;
+		//	m.data[1] = 5;
+		//	m.data[2] = 10;
+		//	m.data[3] = 1;
+		//	message_rx(&m, &distance_measurement);
+		//}
 		if (message_sent)
 		{
 			tx_request = 0;
@@ -145,17 +156,18 @@ public:
 
 	double comm_out_criteria(double x, double y, int sd) //stardard circular transmission area
 	{
-		if (sd>(12*radius)) return 0; // it's more than 10 cm away
+		if (sd>(30*radius)) return 0; // it's more than 10 cm away
 		double d = distance(x,y,pos[0],pos[1]);
-		if (d < 12 * radius)
+		if (d <  30* radius)
 			return d;
 		return 0;
 	}
 
-	bool comm_in_criteria(double x, double y, double d, void *cd)
+	bool comm_in_criteria(double x, double y, double d, float t, void *cd)
 	{
 		distance_measurement = d;
-		message_rx((message_t *)cd, &distance_measurement);
+		theta=t;
+		message_rx((message_t *)cd, &distance_measurement,theta);
 		return true;
 	}
 

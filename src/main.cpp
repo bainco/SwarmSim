@@ -14,6 +14,7 @@
 #include <chrono>
 #include <thread>
 
+
 #define SIMPLEBMP_OPENGL
 #include "simplebmp.h"
 using namespace std;
@@ -48,6 +49,7 @@ FILE *results;
 char log_buffer[255];
 char log_file_buffer[buffer_size];
 
+int light_center[2]={LIGHT_CENTER_X,LIGHT_CENTER_Y};
 
 bool log_debug_info = true;
 char log_file_name[255] = "simulation.log";
@@ -173,8 +175,42 @@ void save_bmp(const char *fileName)
 	bmp.save(fileName);
 }
 
+static float distBtw(int x1, int y1, int x2, int y2) {
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
+}
+
+void measure_metric() {
+	float typeCounts[10] = {0};
+	float SE = 0.0;
+	for (int ii = num_robots-1; ii >= 0; ii--) {
+		typeCounts[robots[ii]->pos[3]] += 1;
+		for (int jj = num_robots-1; jj >= 0; jj--) {
+			if (ii != jj) {
+
+				float distI = distBtw(robots[ii]->pos[0], robots[ii]->pos[1], light_center[0], light_center[1]);
+				float distJ = distBtw(robots[jj]->pos[0], robots[jj]->pos[1], light_center[0], light_center[1]);
+
+				if ((robots[ii]->pos[3] < robots[jj]->pos[3]) and (distI >= distJ)) {
+					SE += 1;
+				}
+				else if ((robots[ii]->pos[3] > robots[jj]->pos[3]) and (distI <= distJ)){
+					SE += 1;
+				}
+			}
+		}
+	}
+
+	int nk2 = 0;
+	for (int i = 0; i < 10; i++) {
+		nk2 += pow(typeCounts[i], 2);
+	}
+	SE = SE / (pow(num_robots, 2) - nk2);
+	cout << SE << endl;
+}
+
 bool run_simulation_step()
 {
+	measure_metric();
 	static int lastrun = 0;
 	lastrun++;
 
@@ -198,6 +234,18 @@ bool run_simulation_step()
 		}
 	}
 
+	//update angle to light for robots
+	for(i=0;i<num_robots;i++)
+	{
+
+//	robots[i]->angle_to_light=fmod(atan2(light_center[1]-robots[i]->pos[1],light_center[0]-robots[i]->pos[0])-robots[i]->pos[2]+PI,2*PI)-PI;
+	robots[i]->pos[2]=fmod(robots[i]->pos[2],2*PI);
+	robots[i]->angle_to_light=fmod(atan2(light_center[1]-robots[i]->pos[1],light_center[0]-robots[i]->pos[0])-robots[i]->pos[2]+PI,2*PI)-PI   ;
+//printf("in main angle is %f\n\r",robots[i]->angle_to_light);
+
+	}
+
+
 	int seed;
 	seed = (rand() % shuffles) * num_robots;
 	//let robots communicate
@@ -217,7 +265,11 @@ bool run_simulation_step()
 					double range = rs->comm_out_criteria(rd->pos[0], rd->pos[1], safe_distance[index * num_robots + j]);
 					if (range)
 					{
-						if (rd->comm_in_criteria(rs->pos[0], rs->pos[1], range, msg))
+						float theta=0;
+						theta=atan2(rs->pos[1]-rd->pos[1],rs->pos[0]-rd->pos[0])-rd->pos[2];
+
+
+						if (rd->comm_in_criteria(rs->pos[0], rs->pos[1], range,theta, msg))
 						{
 							rs->received();
 							//break;
@@ -524,18 +576,16 @@ int main(int argc, char **argv)
 
 	//place robots
 	float robot_pos[ROBOT_COUNT][4];
+
 	setup_positions(robot_pos);
+
 	for (int i=0; i<ROBOT_COUNT; i++)
 	{
 		robots[i] = new mykilobot();
 		robots[i]->robot_init(robot_pos[i][0], robot_pos[i][1], robot_pos[i][2]);
 		robots[i]->id=(int)robot_pos[i][3];
-
-		if (robots[i]->id != (int)robot_pos[i][3])
-			cout << "error" << endl;
 	}
 	setup();
-
 
 	//do some open gl stuff
 

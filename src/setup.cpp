@@ -1,59 +1,54 @@
-/************************
-**** Assignment 1 (late) - setup.cpp
-**** EECS 496
-**** Date: 10/28/2017
-**** Name: Connor Bain
-****
-Changes since last submission:
-	none
-************************/
+#define ROBOT_COUNT 100
+#define ROBOT_SPACING 40
 
-#define ARENA_WIDTH 1300
-#define ARENA_HEIGHT 1300
+#define ARENA_WIDTH 32*32 + 33*ROBOT_SPACING
+#define ARENA_HEIGHT 32*32 + 33*ROBOT_SPACING
 
-#define ROBOT_COUNT 1024
-
-#define SAFE_DIST 50
+#define LIGHT_CENTER_X 1000
+#define LIGHT_CENTER_Y 1000
 
 #define SIMULATION_TIME 180 //in seconds
 
-
-#define TOPOLOGY 1 // for hex
-//#define TOPOLOGY 0 // for rectangle
-
-#include <iostream>
-
 void setup_positions(float robot_pos[ROBOT_COUNT][4])
 {
-	double distance; // Variable to store the distance calc between bots
-	bool collision;  // Flag to store if there is a collision
 
-	// Set robot positions
-	for (int i = 0; i < 32;i++) {
-		for (int j = 0; j < 32; j++) {
-
-			int which = (32*i) + j;
-
-			// For every robot generate an (X,Y,H) 3-tuple
-			robot_pos[which][0] = (j * 40) + 25; // Save the new X value
-
-			if (TOPOLOGY == 1 && which % 2 == 1)
-				robot_pos[which][1] = (i * 40) + 20 + 25; // Save the new Y value
-			else
-				robot_pos[which][1] = (i * 40) + 25;
+		/*robot_pos[0][0] = 100;
+		robot_pos[0][1] = 100;
+		robot_pos[0][2] = 0; //theta
+		robot_pos[0][3] = 0;
 
 
-			robot_pos[which][2] = 0; //thetas
 
-			// Special seed IDs
-			if (which == 0) robot_pos[which][3] = 0; //id
-			else if (which == 31) robot_pos[which][3] = 1;
+		robot_pos[1][0] = 150;
+		robot_pos[1][1] = 150;
+		robot_pos[1][2] = 0; //theta
+		robot_pos[1][3] = 1;
+*/
 
-			// This is only to correct for a bug in the behavior of main where
-			// the id is assigned after it generates a random id so this is just
-			// generating a random id (excepting my specials)
-			else robot_pos[which][3] = rand() % RAND_MAX;
-			//else robot_pos[which][3] = 999.0;
+
+//assign each robot a random position, centered around light source
+	int robot_num;
+	int x=100;
+int y=100;
+	for(robot_num=0;robot_num<=ROBOT_COUNT;robot_num++) //for 100 robots
+	{
+
+
+		robot_pos[robot_num][0]=x;
+		robot_pos[robot_num][1]=y;
+		robot_pos[robot_num][3]=0;
+		x+=200;
+		if ( x>2430)
+		{
+			x=100;
+			y+=200;
 		}
+
+		if(robot_num>=50)
+		robot_pos[robot_num][3]=1;
+
+
 	}
+
+
 }
