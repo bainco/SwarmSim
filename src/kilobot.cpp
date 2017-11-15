@@ -58,20 +58,6 @@ class mykilobot : public kilobot
 		return dist;
 	}
 
-	// Method to display the color based on our shape and location
-	void displayMyColor() {
-
-		int lookupX = myX;
-		int lookupY = myY;
-
-		lookupY = 31 - lookupY;
-
-		if (theImage[lookupY][lookupX] == 0)
-			set_color(RGB(2, 0, 1));
-		else
-			set_color(RGB(1, 1, 1));
-	}
-
 	//main loop
 	void loop()
 	{
@@ -118,7 +104,6 @@ class mykilobot : public kilobot
 					}
 				}
 			}
-			displayMyColor();
 		}
 
 		// If you haven't received both gradients (state 0), check to see if you have

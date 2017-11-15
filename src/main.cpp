@@ -176,24 +176,24 @@ void save_bmp(const char *fileName)
 }
 
 static float distBtw(int x1, int y1, int x2, int y2) {
-	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
 void measure_metric() {
 	float typeCounts[10] = {0};
 	float SE = 0.0;
 	for (int ii = num_robots-1; ii >= 0; ii--) {
-		typeCounts[robots[ii]->pos[3]] += 1;
+		typeCounts[robots[ii]->id] += 1;
 		for (int jj = num_robots-1; jj >= 0; jj--) {
 			if (ii != jj) {
 
 				float distI = distBtw(robots[ii]->pos[0], robots[ii]->pos[1], light_center[0], light_center[1]);
 				float distJ = distBtw(robots[jj]->pos[0], robots[jj]->pos[1], light_center[0], light_center[1]);
 
-				if ((robots[ii]->pos[3] < robots[jj]->pos[3]) and (distI >= distJ)) {
+				if ((robots[ii]->id < robots[jj]->id) and (distI >= distJ)) {
 					SE += 1;
 				}
-				else if ((robots[ii]->pos[3] > robots[jj]->pos[3]) and (distI <= distJ)){
+				else if ((robots[ii]->id > robots[jj]->id) and (distI <= distJ)){
 					SE += 1;
 				}
 			}
@@ -204,8 +204,11 @@ void measure_metric() {
 	for (int i = 0; i < 10; i++) {
 		nk2 += pow(typeCounts[i], 2);
 	}
+	//cout << SE << endl;
+	//cout << num_robots << endl;
+	cout << nk2 << " from " << typeCounts[0] << " and " << typeCounts[1] << endl;
 	SE = SE / (pow(num_robots, 2) - nk2);
-	cout << SE << endl;
+	//cout << SE << endl;
 }
 
 bool run_simulation_step()
@@ -583,6 +586,7 @@ int main(int argc, char **argv)
 	{
 		robots[i] = new mykilobot();
 		robots[i]->robot_init(robot_pos[i][0], robot_pos[i][1], robot_pos[i][2]);
+		robots[i]->pos[3] = robot_pos[i][3];
 		robots[i]->id=(int)robot_pos[i][3];
 	}
 	setup();
