@@ -55,7 +55,7 @@ public:
 
 	unsigned char rand_hard()
 	{
-		return rand() * 255 / RAND_MAX;
+		return rand() * 255;
 	}
 
 	unsigned char message_crc(message_t *m)

@@ -201,14 +201,12 @@ void measure_metric() {
 	}
 
 	int nk2 = 0;
-	for (int i = 0; i < 10; i++) {
-		nk2 += pow(typeCounts[i], 2);
+	for (int iii = 0; iii < 10; iii++) {
+		nk2 += pow(typeCounts[iii], 2);
 	}
-	//cout << SE << endl;
-	//cout << num_robots << endl;
-	cout << nk2 << " from " << typeCounts[0] << " and " << typeCounts[1] << endl;
+
 	SE = SE / (pow(num_robots, 2) - nk2);
-	//cout << SE << endl;
+	cout << SE << endl;
 }
 
 bool run_simulation_step()
@@ -586,7 +584,6 @@ int main(int argc, char **argv)
 	{
 		robots[i] = new mykilobot();
 		robots[i]->robot_init(robot_pos[i][0], robot_pos[i][1], robot_pos[i][2]);
-		robots[i]->pos[3] = robot_pos[i][3];
 		robots[i]->id=(int)robot_pos[i][3];
 	}
 	setup();

@@ -1,11 +1,11 @@
-#define ROBOT_COUNT 210
+#define ROBOT_COUNT 100
 #define ROBOT_SPACING 40
 
-#define ARENA_WIDTH 50*50 + 50*ROBOT_SPACING
-#define ARENA_HEIGHT 50*50 + 50*ROBOT_SPACING
+#define ARENA_WIDTH 32*32 + 33*ROBOT_SPACING
+#define ARENA_HEIGHT 32*32 + 33*ROBOT_SPACING
 
-#define LIGHT_CENTER_X 2500
-#define LIGHT_CENTER_Y 2500
+#define LIGHT_CENTER_X 1000
+#define LIGHT_CENTER_Y 1000
 
 #define SIMULATION_TIME 180 //in seconds
 
@@ -44,14 +44,12 @@ int y=100;
 			y+=200;
 		}
 
-		//robot_pos[robot_num][3] = 0;
+		robot_pos[robot_num][3] = 0;
 
-		 if(robot_num<=70)
-	 		robot_pos[robot_num][3]=0;
-		 else if (robot_num <= 140)
-		 	robot_pos[robot_num][3] = 1;
-			else
-				robot_pos[robot_num][3] = 2;
+		// if(robot_num>=50)
+		// robot_pos[robot_num][3]=1;
+		// else
+		// 	robot_pos[robot_num][3] = 0;
 
 
 	}
