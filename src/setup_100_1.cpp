@@ -1,3 +1,10 @@
+/************************
+**** Assignment 3 - setup_100_1.cpp
+**** EECS 496
+**** Date: 11/20/2017
+**** Name: Connor Bain
+************************/
+
 #define ROBOT_COUNT 100
 #define ROBOT_SPACING 40
 
@@ -11,25 +18,10 @@
 
 void setup_positions(float robot_pos[ROBOT_COUNT][4])
 {
-
-		/*robot_pos[0][0] = 100;
-		robot_pos[0][1] = 100;
-		robot_pos[0][2] = 0; //theta
-		robot_pos[0][3] = 0;
-
-
-
-		robot_pos[1][0] = 150;
-		robot_pos[1][1] = 150;
-		robot_pos[1][2] = 0; //theta
-		robot_pos[1][3] = 1;
-*/
-
-
-//assign each robot a random position, centered around light source
+	//assign each robot a random position, centered around light source
 	int robot_num;
 	int x=100;
-int y=100;
+	int y=100;
 	for(robot_num=0;robot_num<=ROBOT_COUNT;robot_num++) //for 100 robots
 	{
 
@@ -44,15 +36,7 @@ int y=100;
 			y+=200;
 		}
 
+		// Everyone is the same group
 		robot_pos[robot_num][3] = 0;
-
-		// if(robot_num>=50)
-		// robot_pos[robot_num][3]=1;
-		// else
-		// 	robot_pos[robot_num][3] = 0;
-
-
 	}
-
-
 }

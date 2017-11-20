@@ -1,7 +1,7 @@
 /************************
-**** Assignment 2 - kilobot.cpp
+**** Assignment 3 - kilobot.cpp
 **** EECS 496
-**** Date: 11/22/2017
+**** Date: 11/20/2017
 **** Name: Connor Bain
 ************************/
 
@@ -51,18 +51,22 @@ class mykilobot : public kilobot
 	//main loop
 	void loop()
 	{
-
+		// Set my virtual radius
 		my_radius = 10*pow(2,id+1);
 
+		// Color based on Group ID
 		if (id == 0)
-			set_color(RGB(1, 0, 0));
+		set_color(RGB(1, 0, 0));
 		if (id == 1)
-			set_color(RGB(0, 1, 0));
+		set_color(RGB(0, 1, 0));
 		if (id == 2)
-			set_color(RGB(0, 0, 1));
+		set_color(RGB(0, 0, 1));
 
+
+		// If we're not waiting to see neighbors
 		if (wait_timer == 0) {
 
+			// If we're still turning
 			if (turn_timer > 0) {
 				spinup_motors();
 				if (turn_direction == 0) {
@@ -74,80 +78,64 @@ class mykilobot : public kilobot
 				turn_timer--;
 			}
 
-		else if (motion_timer > 0){
-			spinup_motors();
-			set_motors(kilo_straight_left, kilo_straight_right);
-			motion_timer--;
-			if (motion_timer == 0) wait_timer = 100;
+			// Otherwise if we're still moving forward
+			else if (motion_timer > 0){
+				spinup_motors();
+				set_motors(kilo_straight_left, kilo_straight_right);
+				motion_timer--;
+				if (motion_timer == 0) wait_timer = 100;
+			}
+
+			// If we get here, it means we need to calculate a new force vector
+			else {
+
+				// Generate a (coarse) random vector (dependent on turn-rate)
+				double randTheta = ((rand_hard() % 126) * TURNING_RATE);
+				rand_X = cos(randTheta) * C_RAND;
+				rand_Y = sin(randTheta) * C_RAND;
+
+				// Scale the repulse vector if necessary
+				double repulseMag = sqrt(pow(repulse_X, 2) + pow(repulse_Y, 2));
+				if (repulseMag > REUPLSE_CAP) {
+					repulse_X = (REUPLSE_CAP / repulseMag) * repulse_X;
+					repulse_Y = (REUPLSE_CAP / repulseMag) * repulse_Y;
+				}
+
+				// Calculate the unit vector (in terms of BOT_SPEED) to the light
+				taxis_X = cos(angle_to_light);
+				taxis_Y = sin(angle_to_light);
+
+				// Add them together
+				final_X = taxis_X + rand_X + repulse_X;
+				final_Y = taxis_Y + rand_Y + repulse_Y;
+
+				// Solve for the components
+				double temp = atan2(final_Y, final_X);
+
+				// Set the timers
+				turn_timer =  abs(temp) / TURNING_RATE;
+				if (temp > 0)
+				turn_direction = 1;
+				else
+				turn_direction = 0;
+
+				motion_timer = (int) sqrt(pow(final_X, 2) + pow(final_Y, 2));
+
+				// Limit the number of steps you take
+				if (motion_timer > 8) motion_timer = 8;
+
+				// Forget your previous repulsion values
+				repulse_X = 0;
+				repulse_Y = 0;
+			}
 		}
 
-
-		// // TURNING RATE = 0.05 radians per tick
-		// //cout << angle_to_light << endl;//sensor gives heading (in rad) to light source
-		//
-		// else if (fabs(angle_to_light) >= 0.05) {
-		//
-		// 	angle_to_light
-		// 	// turn_timer = (int) (fabs(angle_to_light) / TURNING_RATE);
-		// 	// if (angle_to_light > 0){
-		// 	// 	turn_direction = 1;
-		// 	// }
-		// 	// else
-		// 	// 	turn_direction = 0;
-		// }
-		//
-		// // else {
-		// // 	spinup_motors();
-		// // 	set_motors(kilo_straight_left, kilo_straight_right);
-		// // }
-		//
-		// // GENERATE RANDOM VECTOR
-		//
-		// // Q: How do i generate a random direction?
-		// // rand_hard()
-		//
-		// angle_to_light
-
-		// Really a random turn interval
-		else {
-		double randTheta = ((rand_hard() % 126) * TURNING_RATE);
-		rand_X = cos(randTheta) * C_RAND;
-		rand_Y = sin(randTheta) * C_RAND;
-
-		double repulseMag = sqrt(pow(repulse_X, 2) + pow(repulse_Y, 2));
-		if (repulseMag > REUPLSE_CAP) {
-				repulse_X = (REUPLSE_CAP / repulseMag) * repulse_X;
-				repulse_Y = (REUPLSE_CAP / repulseMag) * repulse_Y;
-		}
-
-		taxis_X = cos(angle_to_light);
-		taxis_Y = sin(angle_to_light);
-
-		final_X = taxis_X + rand_X + repulse_X;
-		final_Y = taxis_Y + rand_Y + repulse_Y;
-
-		double temp = atan2(final_Y, final_X);
-		turn_timer =  abs(temp) / TURNING_RATE;
-		if (temp > 0)
-			turn_direction = 1;
-		else
-			turn_direction = 0;
-
-		motion_timer = (int) sqrt(pow(final_X, 2) + pow(final_Y, 2));
-
-		if (motion_timer > 8) motion_timer = 8;
-
-		repulse_X = 0;
-		repulse_Y = 0;
-	}
-}
-
-	else wait_timer--;
+		else wait_timer--;
 
 	}
-
 
 	void setup() {
+		// Establish a blank message
 		out_message.type = NORMAL;
 		out_message.data[0] = 0;
 		out_message.crc = message_crc(&out_message);
@@ -165,7 +153,7 @@ class mykilobot : public kilobot
 		static int count = rand();
 
 		count--;
-		// Send every c cycles
+		// Send every 10 cycles
 		int cycleRate = 10;
 		if (!(count % cycleRate))
 		{
@@ -181,13 +169,16 @@ class mykilobot : public kilobot
 		distance = estimate_distance(distance_measurement);
 		theta=t;
 
+		// If a bot is in your circle of influence, calculate your repulsion vector
 		double magnitude = 0;
 		if (wait_timer > 0) {
-				if (distance < 2*my_radius){
-					magnitude = abs(k*((2*my_radius/BOT_SPEED) - (distance/BOT_SPEED)));
-							repulse_X += magnitude*cos((PI + theta));
-							repulse_Y += magnitude*sin((PI + theta));
-				}
+			if (distance < 2*my_radius){
+				// the magnitude is proportional to how close it is (or really was)
+				magnitude = abs(k*((2*my_radius/BOT_SPEED) - (distance/BOT_SPEED)));
+				// "reverse" the direction
+				repulse_X += magnitude*cos((PI + theta));
+				repulse_Y += magnitude*sin((PI + theta));
+			}
 		}
 		rxed = 1;
 	}
