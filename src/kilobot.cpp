@@ -27,9 +27,7 @@ class mykilobot : public kilobot
 	message_t out_message;
 	int rxed=0;
 
-	int motion_timer = 0;
 	int turn_timer = 0;
-	int wait_timer = 100;
 	int turn_direction = -1;
 
 	double repulse_X = 0;
@@ -51,41 +49,25 @@ class mykilobot : public kilobot
 	//main loop
 	void loop()
 	{
-		// Set my virtual radius
-		my_radius = 10*pow(2,id+1);
 
-		// Color based on Group ID
-		if (id == 0)
-		set_color(RGB(1, 0, 0));
-		if (id == 1)
-		set_color(RGB(0, 1, 0));
-		if (id == 2)
-		set_color(RGB(0, 0, 1));
+		// Always move forward (we're fixed wing aircraft!)
+		spinup_motors();
+		set_motors(kilo_straight_left, kilo_straight_right);
 
-
-		// If we're not waiting to see neighbors
-		if (wait_timer == 0) {
-
-			// If we're still turning
-			if (turn_timer > 0) {
-				spinup_motors();
-				if (turn_direction == 0) {
-					set_motors(kilo_turn_left, 0);
-				}
-				else {
-					set_motors(0, kilo_turn_right);
-				}
-				turn_timer--;
+		// Handle turn count downs
+		if (turn_timer > 0) {
+			spinup_motors();
+			if (turn_direction == 0) {
+				set_motors(kilo_turn_left, 0);
 			}
+			else {
+				set_motors(0, kilo_turn_right);
+			}
+			turn_timer--;
+		}
 
+			// Force calculations...
 			// Otherwise if we're still moving forward
-			else if (motion_timer > 0){
-				spinup_motors();
-				set_motors(kilo_straight_left, kilo_straight_right);
-				motion_timer--;
-				if (motion_timer == 0) wait_timer = 100;
-			}
-
 			// If we get here, it means we need to calculate a new force vector
 			else {
 
@@ -128,9 +110,6 @@ class mykilobot : public kilobot
 				repulse_X = 0;
 				repulse_Y = 0;
 			}
-		}
-
-		else wait_timer--;
 
 	}
 
@@ -169,17 +148,6 @@ class mykilobot : public kilobot
 		distance = estimate_distance(distance_measurement);
 		theta=t;
 
-		// If a bot is in your circle of influence, calculate your repulsion vector
-		double magnitude = 0;
-		if (wait_timer > 0) {
-			if (distance < 2*my_radius){
-				// the magnitude is proportional to how close it is (or really was)
-				magnitude = abs(k*((2*my_radius/BOT_SPEED) - (distance/BOT_SPEED)));
-				// "reverse" the direction
-				repulse_X += magnitude*cos((PI + theta));
-				repulse_Y += magnitude*sin((PI + theta));
-			}
-		}
 		rxed = 1;
 	}
 };
