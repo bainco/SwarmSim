@@ -27,6 +27,8 @@ class mykilobot : public kilobot
 	message_t out_message;
 	int rxed=0;
 
+	char neighborRxCount = -1;
+
 	int turn_timer = 0;
 	int turn_direction = -1;
 
@@ -45,6 +47,8 @@ class mykilobot : public kilobot
 	int my_radius;
 
 	int msrx=0;
+
+	unsigned char myID;
 
 	//main loop
 	void loop()
@@ -114,9 +118,10 @@ class mykilobot : public kilobot
 	}
 
 	void setup() {
+		myID = rand_hard();
 		// Establish a blank message
 		out_message.type = NORMAL;
-		out_message.data[0] = 0;
+		out_message.data[0] = myID;
 		out_message.crc = message_crc(&out_message);
 	}
 
@@ -144,9 +149,14 @@ class mykilobot : public kilobot
 	//receives message
 	void message_rx(message_t *message, distance_measurement_t *distance_measurement, float t)
 	{
-		double k = 0.2;
 		distance = estimate_distance(distance_measurement);
 		theta=t;
+
+		neighborRxCount = (neighborRxCount + 1) % 4;
+
+		out_message.data[1 + (neighborRxCount*2)] = message->data[0]; // THE ID THAT IS INCOMING
+		out_message.data[2 + (neighborRxCount*2)] = (theta + PI) / TURNING_RATE; // THE # right turns it takes to this ID THAT IS INCOMING
+
 
 		rxed = 1;
 	}
