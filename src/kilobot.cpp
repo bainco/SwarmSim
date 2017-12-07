@@ -73,7 +73,7 @@ class mykilobot : public kilobot
 			// Force calculations...
 			// Otherwise if we're still moving forward
 			// If we get here, it means we need to calculate a new force vector
-			else {
+			else if (false) {
 
 				// Generate a (coarse) random vector (dependent on turn-rate)
 				double randTheta = ((rand_hard() % 126) * TURNING_RATE);
@@ -105,11 +105,6 @@ class mykilobot : public kilobot
 				else
 				turn_direction = 0;
 
-				motion_timer = (int) sqrt(pow(final_X, 2) + pow(final_Y, 2));
-
-				// Limit the number of steps you take
-				if (motion_timer > 8) motion_timer = 8;
-
 				// Forget your previous repulsion values
 				repulse_X = 0;
 				repulse_Y = 0;
@@ -136,6 +131,8 @@ class mykilobot : public kilobot
 	{
 		static int count = rand();
 
+		cout << "HELLO" << endl;
+
 		count--;
 		// Send every 10 cycles
 		int cycleRate = 10;
@@ -152,10 +149,25 @@ class mykilobot : public kilobot
 		distance = estimate_distance(distance_measurement);
 		theta=t;
 
+		float beta;
+		float turn;
+
 		neighborRxCount = (neighborRxCount + 1) % 4;
 
 		out_message.data[1 + (neighborRxCount*2)] = message->data[0]; // THE ID THAT IS INCOMING
 		out_message.data[2 + (neighborRxCount*2)] = (theta + PI) / TURNING_RATE; // THE # right turns it takes to this ID THAT IS INCOMING
+
+		for (char i = 1; i < 9; i+2) {
+			if (message->data[i] == myID) {
+				beta = (message->data[i+1] * TURNING_RATE) - PI;
+
+				if (theta <= 0) {
+					turn = -1*beta - 180 + fabs(theta);
+				}
+				else
+					turn = -1*beta + 180 - fabs(theta);
+			}
+		}
 
 
 		rxed = 1;

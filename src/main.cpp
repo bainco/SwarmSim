@@ -206,7 +206,6 @@ void measure_metric() {
 	}
 
 	SE = SE / (pow(num_robots, 2) - nk2);
-	cout << SE << endl;
 }
 
 bool run_simulation_step()

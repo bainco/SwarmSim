@@ -5,7 +5,7 @@
 **** Name: Connor Bain
 ************************/
 
-#define ROBOT_COUNT 210
+#define ROBOT_COUNT 2
 #define ROBOT_SPACING 40
 
 #define ARENA_WIDTH 50*50 + 50*ROBOT_SPACING
