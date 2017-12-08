@@ -1,7 +1,7 @@
 /************************
-**** Assignment 3 - setup.cpp
+**** Assignment 4 - kilobot.cpp
 **** EECS 496
-**** Date: 11/20/2017
+**** Date: 12/07/2017
 **** Name: Connor Bain
 ************************/
 #define ROBOT_COUNT 10
