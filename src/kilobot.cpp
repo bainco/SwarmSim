@@ -89,7 +89,7 @@ unsigned char turn_direction = 0;
 			spinup_motors();
 			set_motors(kilo_straight_left, kilo_straight_right);
 
-		if (ticks % 10 == 0){
+		if (ticks % 5 == 0){
 		neighborCount = 0;
 		for (int i = 0; i < 256; i++) {
 			if (myNeighbors[i].countdown > 0) {
@@ -102,7 +102,7 @@ unsigned char turn_direction = 0;
 				cohesion_X += myNeighbors[i].distanceTo*cos(myNeighbors[i].angleTo);
 				cohesion_Y += myNeighbors[i].distanceTo*sin(myNeighbors[i].angleTo);
 
-				cout << (int) myNeighbors[i].distanceTo << endl;
+				//cout << (int) myNeighbors[i].distanceTo << endl;
 				repulse_X += (255 - myNeighbors[i].distanceTo)*cos(myNeighbors[i].angleTo + PI);
 				repulse_Y += (255 - myNeighbors[i].distanceTo)*sin(myNeighbors[i].angleTo + PI);
 
@@ -136,16 +136,16 @@ unsigned char turn_direction = 0;
 		align_Y = align_Y / neighborCount;
 
 		mag = magnitude(align_X, align_Y);
-		align_X = align_X /mag ;
-		align_Y = align_Y /mag;
+		align_X = align_X / mag ;
+		align_Y = align_Y / mag;
 
 		//if (neighborCount > 0) {
 		//
 	//}
 
 
-		final_X = 2*cohesion_X + (10*repulse_X) + (2*taxis_X) + (4*align_X);
-		final_Y = 2*cohesion_Y + (10*repulse_Y) + (2*taxis_Y) + (4*align_Y);
+		final_X = 2*cohesion_X + (2*repulse_X) + (0.45*taxis_X) + (1.1*align_X);
+		final_Y = 2*cohesion_Y + (2*repulse_Y) + (0.45*taxis_Y) + (1.1*align_Y);
 
 		double temp = atan2(final_Y, final_X);
 
