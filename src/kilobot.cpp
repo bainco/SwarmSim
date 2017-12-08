@@ -27,16 +27,20 @@ class mykilobot : public kilobot
 	message_t out_message;
 	int rxed=0;
 
-	char neighborRxCount = -1;
 
-	int turn_timer = 0;
-	int turn_direction = -1;
+unsigned char turn_timer = 0;
+unsigned char turn_direction = 0;
+
+	char neighborRxCount = -1;
 
 	double repulse_X = 0;
 	double repulse_Y = 0;
 
-	double rand_X = 0;
-	double rand_Y = 0;
+	double align_X = 0;
+	double align_Y = 0;
+
+	double cohesion_X = 0;
+	double cohesion_Y = 0;
 
 	double taxis_X = 0;
 	double taxis_Y = 0;
@@ -44,76 +48,135 @@ class mykilobot : public kilobot
 	double final_X = 0;
 	double final_Y = 0;
 
+	unsigned int ticks = 0;
+
 	int my_radius;
 
 	int msrx=0;
 
+	struct neighbor {
+		unsigned char distanceTo;
+		float angleTo;
+		unsigned char countdown;
+		float heading;
+	};
+	neighbor nullNeighbor = {0, 0, 0, 0};
+
+	neighbor myNeighbors[256] = {nullNeighbor};
+
 	unsigned char myID;
+	unsigned char neighborCount;
+
+	void updateNeighbors(unsigned char theID, unsigned char theDist, float theTheta, float theirHeading) {
+		myNeighbors[theID].distanceTo = theDist;
+		myNeighbors[theID].angleTo = theTheta;
+		myNeighbors[theID].heading = theirHeading;
+		//cout << "theirID " << (int) theID << " their heading" << theirHeading;
+		myNeighbors[theID].countdown = 100;
+	}
+
+	double magnitude(double x, double y) {
+		return sqrt(pow(x,2) + pow(y, 2));
+	}
+
 
 	//main loop
-	void loop()
-	{
+	void loop() {
 
-		// Always move forward (we're fixed wing aircraft!)
-		spinup_motors();
-		set_motors(kilo_straight_left, kilo_straight_right);
+		ticks++;
 
-		// Handle turn count downs
-		if (turn_timer > 0) {
+
 			spinup_motors();
-			if (turn_direction == 0) {
-				set_motors(kilo_turn_left, 0);
+			set_motors(kilo_straight_left, kilo_straight_right);
+
+		if (ticks % 10 == 0){
+		neighborCount = 0;
+		for (int i = 0; i < 256; i++) {
+			if (myNeighbors[i].countdown > 0) {
+				myNeighbors[i].countdown--;
+				neighborCount++;
+
+				align_X += myNeighbors[i].distanceTo*cos(myNeighbors[i].heading);
+				align_Y += myNeighbors[i].distanceTo*sin(myNeighbors[i].heading);
+
+				cohesion_X += myNeighbors[i].distanceTo*cos(myNeighbors[i].angleTo);
+				cohesion_Y += myNeighbors[i].distanceTo*sin(myNeighbors[i].angleTo);
+
+				cout << (int) myNeighbors[i].distanceTo << endl;
+				repulse_X += (255 - myNeighbors[i].distanceTo)*cos(myNeighbors[i].angleTo + PI);
+				repulse_Y += (255 - myNeighbors[i].distanceTo)*sin(myNeighbors[i].angleTo + PI);
+
+			//	cout << (int) myID << ": " << i << " is my neighbor" << endl;
 			}
-			else {
-				set_motors(0, kilo_turn_right);
-			}
-			turn_timer--;
 		}
 
-			// Force calculations...
-			// Otherwise if we're still moving forward
-			// If we get here, it means we need to calculate a new force vector
-			else if (false) {
+		if (neighborCount == 0) set_color(RGB(1, 0, 0));
+		else  set_color(RGB(0, 1, 0));
 
-				// Generate a (coarse) random vector (dependent on turn-rate)
-				double randTheta = ((rand_hard() % 126) * TURNING_RATE);
-				rand_X = cos(randTheta) * C_RAND;
-				rand_Y = sin(randTheta) * C_RAND;
+		cohesion_X = cohesion_X / neighborCount;
+		cohesion_Y = cohesion_Y / neighborCount;
 
-				// Scale the repulse vector if necessary
-				double repulseMag = sqrt(pow(repulse_X, 2) + pow(repulse_Y, 2));
-				if (repulseMag > REUPLSE_CAP) {
-					repulse_X = (REUPLSE_CAP / repulseMag) * repulse_X;
-					repulse_Y = (REUPLSE_CAP / repulseMag) * repulse_Y;
-				}
+		double mag = magnitude(cohesion_X, cohesion_Y);
 
-				// Calculate the unit vector (in terms of BOT_SPEED) to the light
-				taxis_X = cos(angle_to_light);
-				taxis_Y = sin(angle_to_light);
+		cohesion_X = cohesion_X / mag;//
+		cohesion_Y = cohesion_Y / mag;//
 
-				// Add them together
-				final_X = taxis_X + rand_X + repulse_X;
-				final_Y = taxis_Y + rand_Y + repulse_Y;
+		mag = magnitude(repulse_X, repulse_Y);
+		repulse_X = repulse_X / mag;
+		repulse_Y = repulse_Y / mag;
 
-				// Solve for the components
-				double temp = atan2(final_Y, final_X);
+		// Calculate the unit vector (in terms of BOT_SPEED) to the light
+		taxis_X = cos(angle_to_light);
+		taxis_Y = sin(angle_to_light);
+		mag = magnitude(taxis_X, taxis_Y);
+		taxis_X = taxis_X / mag;
+		taxis_Y = taxis_Y / mag;
 
-				// Set the timers
-				turn_timer =  abs(temp) / TURNING_RATE;
-				if (temp > 0)
-				turn_direction = 1;
-				else
-				turn_direction = 0;
+		align_X = align_X / neighborCount;
+		align_Y = align_Y / neighborCount;
 
-				// Forget your previous repulsion values
-				repulse_X = 0;
-				repulse_Y = 0;
-			}
+		mag = magnitude(align_X, align_Y);
+		align_X = align_X /mag ;
+		align_Y = align_Y /mag;
+
+		//if (neighborCount > 0) {
+		//
+	//}
+
+
+		final_X = 2*cohesion_X + (10*repulse_X) + (2*taxis_X) + (4*align_X);
+		final_Y = 2*cohesion_Y + (10*repulse_Y) + (2*taxis_Y) + (4*align_Y);
+
+		double temp = atan2(final_Y, final_X);
+
+		if (neighborCount == 0) {
+				temp = atan2(taxis_Y, taxis_X);
+		}
+
+		repulse_X = 0;
+		repulse_Y = 0;
+		align_X = 0;
+		align_Y = 0;
+		taxis_X = 0;
+		taxis_Y = 0;
+		cohesion_X = 0;
+		cohesion_Y = 0;
+
+		if (temp < 0){
+			spinup_motors();
+			set_motors(kilo_turn_left, 0);
+		}
+		else if (temp > 0) {
+			spinup_motors();
+			set_motors(0, kilo_turn_right);
+		}
+}
 
 	}
 
 	void setup() {
 		myID = rand_hard();
+		set_color(RGB(1, 0, 0));
 		// Establish a blank message
 		out_message.type = NORMAL;
 		out_message.data[0] = myID;
@@ -131,16 +194,24 @@ class mykilobot : public kilobot
 	{
 		static int count = rand();
 
-		cout << "HELLO" << endl;
-
 		count--;
 		// Send every 10 cycles
-		int cycleRate = 10;
+		int cycleRate = 5;
 		if (!(count % cycleRate))
 		{
 			return &out_message;
 		}
 		return NULL;
+	}
+
+	float modPI(float t) {
+		while (t < -1*PI) {
+			t += 2*PI;
+		}
+		while (t > 1*PI) {
+			t -= 2*PI;
+		}
+		return t;
 	}
 
 	//receives message
@@ -149,26 +220,42 @@ class mykilobot : public kilobot
 		distance = estimate_distance(distance_measurement);
 		theta=t;
 
+		//cout << (int) myID << " theta " << theta << endl;
+
+		float alpha;
 		float beta;
 		float turn;
 
+		for (char i = 1; i < 9; i = i+2){
+			if (out_message.data[i] == message->data[0])
+				out_message.data[i] = 0;
+		}
+
 		neighborRxCount = (neighborRxCount + 1) % 4;
-
 		out_message.data[1 + (neighborRxCount*2)] = message->data[0]; // THE ID THAT IS INCOMING
-		out_message.data[2 + (neighborRxCount*2)] = (theta + PI) / TURNING_RATE; // THE # right turns it takes to this ID THAT IS INCOMING
+		out_message.data[2 + (neighborRxCount*2)] = (unsigned char) (theta + PI) / TURNING_RATE; // THE # right turns it takes to this ID THAT IS INCOMING
 
-		for (char i = 1; i < 9; i+2) {
+		for (char i = 1; i < 9; i = i+2) {
 			if (message->data[i] == myID) {
-				beta = (message->data[i+1] * TURNING_RATE) - PI;
 
-				if (theta <= 0) {
-					turn = -1*beta - 180 + fabs(theta);
-				}
-				else
-					turn = -1*beta + 180 - fabs(theta);
+				set_color(RGB(0, 1, 0));
+
+				alpha = (message->data[i+1] * TURNING_RATE) - PI;
+				beta = theta;
+
+				alpha = alpha - PI;
+				turn = beta + alpha;
+
+				turn = modPI(turn) / 2;
+
+//				cout << (int) myID <<" turn" << " " << turn << endl;
+
+
+
 			}
 		}
 
+		updateNeighbors(message->data[0], distance, theta, turn);
 
 		rxed = 1;
 	}
