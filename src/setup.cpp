@@ -25,8 +25,8 @@ void setup_positions(float robot_pos[ROBOT_COUNT][4])
 
 	for(robot_num=0;robot_num<=ROBOT_COUNT;robot_num++) //for 100 robots
 	{
-		robot_pos[robot_num][0]= rand() % ARENA_WIDTH;
-		robot_pos[robot_num][1]= rand() % ARENA_HEIGHT;
+		robot_pos[robot_num][0]= (rand() % (ARENA_WIDTH - 100)) + 100;
+		robot_pos[robot_num][1]= (rand() % (ARENA_HEIGHT - 100)) + 100;
 
 		robot_pos[robot_num][2]=(((double)(rand() % 360)) - 180)/360*2*PI;
 
